@@ -794,3 +794,42 @@ export interface AiCustomerMessageDTO {
   type: AiCustomerMessageType;
   message: string;
 }
+
+// Profit & Executive Dashboard Types (Phase 2 Sprint 6)
+export type JobProfitabilityLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface JobProfitabilityDTO {
+  jobId: string;
+  jobNumber?: string | null;
+  customerName?: string | null;
+  status: string;
+
+  contractAmount: number;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+  marginAmount?: number | null;
+  marginPercent?: number | null;
+  changeOrdersAmount?: number | null;
+
+  profitabilityLevel: JobProfitabilityLevel;
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  schedulingRisk?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+}
+
+export interface ProfitDashboardSummaryDTO {
+  totalJobs: number;
+  totalContractAmount: number;
+  totalMarginAmount: number;
+  averageMarginPercent: number | null;
+
+  lowMarginJobCount: number;
+  mediumMarginJobCount: number;
+  highMarginJobCount: number;
+
+  highRiskAndLowMarginJobCount: number;
+}
+
+export interface ProfitDashboardJobFilter {
+  profitabilityLevel?: JobProfitabilityLevel;
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+}

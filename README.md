@@ -546,6 +546,49 @@ POST  /api/v1/ai-ops/jobs/:jobId/customer-message   # Generate customer message
 
 See **[AI Operations Assistant](docs/10-ai-operations-assistant.md)** for detailed documentation.
 
+## 💰 Profit & Executive Dashboard
+
+Phase 2 Sprint 6 introduced a profit and executive dashboard for job-level profitability tracking and portfolio performance analysis without external accounting integration.
+
+**Features**:
+
+- ✅ Job financial snapshots with contract amount, costs, and margin calculations
+- ✅ Profitability levels (LOW < 10%, MEDIUM 10-25%, HIGH ≥ 25%)
+- ✅ Executive summary metrics (total contract amount, total margin, average margin %)
+- ✅ High-risk low-margin job identification
+- ✅ Client-side filtering by profitability level and risk level
+- ✅ Integration with existing Risk Dashboard data
+
+**API Endpoints**:
+
+```
+GET   /api/v1/profit/dashboard/summary            # Get aggregated summary metrics
+GET   /api/v1/profit/dashboard/jobs               # List jobs with filters (profitabilityLevel, riskLevel)
+GET   /api/v1/profit/jobs/:jobId                  # Get financial snapshot for job
+POST  /api/v1/profit/jobs/:jobId/recalculate      # Trigger snapshot recalculation
+POST  /api/v1/profit/recalculate-all              # Recalculate all job snapshots
+```
+
+**Dashboard Routes**:
+
+- `/profit` - Executive dashboard with summary cards, profitability/risk filters, and jobs table
+
+**Financial Calculations**:
+- `marginAmount = contractAmount - actualCost` (or estimatedCost if actualCost unavailable)
+- `marginPercent = (marginAmount / contractAmount) * 100`
+- v1 uses systemSize-based placeholder for contract amount ($3.50/W)
+
+**Profitability Thresholds**:
+- **LOW**: marginPercent < 10%
+- **MEDIUM**: 10% ≤ marginPercent < 25%
+- **HIGH**: marginPercent ≥ 25%
+
+**Future Enhancements**:
+- QuickBooks/accounting software integration
+- Per-cost-category breakdown (labor, materials, permits)
+- Time-series margin tracking
+- Actual cost tracking from invoices and expenses
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.

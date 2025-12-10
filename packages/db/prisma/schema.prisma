@@ -38,6 +38,7 @@ model Job {
   warrantyClaims  WarrantyClaim[]
   materialOrders  MaterialOrder[]
   subcontractorAssignments JobSubcontractorAssignment[]
+  financialSnapshot JobFinancialSnapshot?
 
   @@index([jobNimbusId])
   @@index([status])
@@ -448,4 +449,30 @@ model JobSubcontractorAssignment {
   @@index([subcontractorId])
   @@index([isPrimary])
   @@map("job_subcontractor_assignments")
+}
+
+model JobFinancialSnapshot {
+  id             String   @id @default(cuid())
+  jobId          String   @unique
+  job            Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  contractAmount Float
+  estimatedCost  Float?
+  actualCost     Float?
+
+  marginAmount   Float?
+  marginPercent  Float?
+
+  changeOrdersAmount Float?
+
+  // Optional signal fields (denormalized for reporting)
+  riskLevel      String?  // 'LOW' | 'MEDIUM' | 'HIGH'
+  schedulingRisk String?  // 'LOW' | 'MEDIUM' | 'HIGH'
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([riskLevel])
+  @@index([marginPercent])
+  @@map("job_financial_snapshots")
 }
