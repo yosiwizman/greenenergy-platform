@@ -260,7 +260,7 @@ export class SafetyService {
 
     let totalRecordableIncidents = 0;
     let daysAwayFromWork = 0;
-    let restrictedOrTransferCases = 0;
+    const restrictedOrTransferCases = 0;
     let otherRecordableCases = 0;
 
     const byIncidentType: Record<SafetyIncidentType, number> = {
