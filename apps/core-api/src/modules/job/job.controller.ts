@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
 import { JobService } from './job.service';
+import { Prisma } from '@prisma/client';
 import type { CreateJobDto, UpdateJobDto } from '@greenenergy/shared-types';
 
 @Controller('jobs')
@@ -12,7 +13,18 @@ export class JobController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(
+    @Param('id') id: string,
+  ): Promise<Prisma.JobGetPayload<{
+    include: {
+      contacts: true;
+      photos: true;
+      qcResults: true;
+      riskFlags: true;
+      warranties: true;
+      materialOrders: true;
+    };
+  }> | null> {
     return this.jobService.findOne(id);
   }
 

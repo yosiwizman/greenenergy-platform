@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
+import { Prisma } from '@prisma/client';
 import type { CreateJobDto, UpdateJobDto } from '@greenenergy/shared-types';
 
 @Injectable()
@@ -16,7 +17,18 @@ export class JobService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(
+    id: string,
+  ): Promise<Prisma.JobGetPayload<{
+    include: {
+      contacts: true;
+      photos: true;
+      qcResults: true;
+      riskFlags: true;
+      warranties: true;
+      materialOrders: true;
+    };
+  }> | null> {
     return prisma.job.findUnique({
       where: { id },
       include: {
