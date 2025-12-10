@@ -481,3 +481,15 @@ model JobFinancialSnapshot {
   @@index([accountingSource])
   @@map("job_financial_snapshots")
 }
+
+model WorkflowActionLog {
+  id           String   @id @default(cuid())
+  jobId        String
+  ruleKey      String   // e.g. 'SALES_ESTIMATE_FOLLOWUP_72H'
+  actionType   String   // 'JOBNIMBUS_TASK' | 'JOBNIMBUS_NOTE' | 'INTERNAL_FLAG'
+  metadataJson Json?    @db.JsonB
+  createdAt    DateTime @default(now())
+
+  @@index([jobId, ruleKey, createdAt])
+  @@map("workflow_action_logs")
+}

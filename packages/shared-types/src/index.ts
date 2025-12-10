@@ -840,3 +840,44 @@ export interface ProfitDashboardJobFilter {
   profitabilityLevel?: JobProfitabilityLevel;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
+
+// Workflow Automation Types (Phase 3 Sprint 4)
+export type WorkflowActionType =
+  | 'JOBNIMBUS_TASK'
+  | 'JOBNIMBUS_NOTE'
+  | 'INTERNAL_FLAG';
+
+export type WorkflowDepartment =
+  | 'SALES'
+  | 'PRODUCTION'
+  | 'ADMIN'
+  | 'SAFETY'
+  | 'WARRANTY'
+  | 'FINANCE';
+
+export interface WorkflowActionLogDTO {
+  id: string;
+  jobId: string;
+  ruleKey: string;
+  actionType: WorkflowActionType;
+  createdAt: string; // ISO string
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface WorkflowRuleSummaryDTO {
+  key: string;
+  name: string;
+  description: string;
+  department: WorkflowDepartment;
+  enabled: boolean;
+}
+
+export interface RunWorkflowForJobResponse {
+  jobId: string;
+  actions: WorkflowActionLogDTO[];
+}
+
+export interface RunAllWorkflowsResponse {
+  processed: number;
+  actions: number;
+}
