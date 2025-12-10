@@ -188,7 +188,7 @@ describe('WorkflowService', () => {
       const logs = await service.getRecentLogs({});
 
       expect(logs).toHaveLength(1);
-      expect(logs[0].ruleKey).toBe('SALES_ESTIMATE_FOLLOWUP_72H');
+      expect(logs[0]?.ruleKey).toBe('SALES_ESTIMATE_FOLLOWUP_72H');
       expect(prisma.workflowActionLog.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 50,
