@@ -67,14 +67,67 @@ QB_SYNC_ENABLED        # Enable/disable scheduled sync
 - One-click batch sync from UI
 - Improved reliability and user experience
 
-## Sprint 3: Intelligent Dispatching
+## Sprint 3: Deployment & Environments ✅ COMPLETE
+
+**Status**: ✅ Delivered
+
+**Deliverables**:
+- ✅ Comprehensive deployment documentation (docs/11-deployment-and-environments.md)
+- ✅ Production-ready Dockerfile for core-api (multi-stage, Node 20 Alpine)
+- ✅ .dockerignore for optimized Docker builds
+- ✅ Consolidated .env.example at repo root (all services)
+- ✅ .env.example for internal-dashboard
+- ✅ Deployment guides for Vercel (frontends) and Railway (backend + DB)
+- ✅ QuickBooks OAuth2 environment variables documented
+- ✅ Architecture diagrams and rollout strategy
+- ✅ Troubleshooting guide and security best practices
+
+**Technical Details**:
+- **Vercel**: Two projects for customer-portal and internal-dashboard
+- **Railway**: NestJS API (Dockerized) + PostgreSQL 15
+- **Health checks**: Built-in health endpoint for Railway monitoring
+- **Environment variables**: Centralized documentation for all services
+- **Monorepo support**: Optimized build commands for pnpm workspaces
+
+**Environment Variables Documented**:
+```bash
+# Core API (15+ variables)
+NODE_ENV, PORT, DATABASE_URL
+JOBNIMBUS_*, PORTAL_*, INTERNAL_API_KEY
+QB_ENABLED, QB_CLIENT_ID, QB_CLIENT_SECRET, QB_REFRESH_TOKEN, QB_REALM_ID, QB_BASE_URL
+
+# Customer Portal
+NEXT_PUBLIC_API_BASE_URL
+
+# Internal Dashboard
+NEXT_PUBLIC_API_BASE_URL, NEXT_PUBLIC_INTERNAL_API_KEY
+```
+
+**Deployment Options**:
+- **Dashboard**: Click-and-deploy via Vercel/Railway web UI (non-technical CEO friendly)
+- **CLI**: Vercel CLI and Railway CLI for power users
+- **CI/CD**: Auto-deploy on Git push to main branch
+
+**Cost Estimates**:
+- Vercel Hobby: $0/month (2 projects)
+- Railway Starter: ~$5/month (API + PostgreSQL)
+- **Total**: ~$5-10/month for infrastructure
+
+**Benefits**:
+- Production-ready deployment strategy
+- Clear step-by-step guides for non-technical stakeholders
+- Scalable architecture (Vercel edge + Railway services)
+- Secure environment variable management
+- Easy rollback and update procedures
+
+## Sprint 4: Intelligent Dispatching
 
 - AI-driven crew scheduling
 - Route optimization
 - Skills-based matching
 - Real-time dispatch adjustments
 
-## Sprint 3: Finance Integrations (Weeks 25-26)
+## Sprint 5: Finance Integrations (Weeks 25-26)
 
 - QuickBooks/Xero integration
 - Invoice generation and tracking

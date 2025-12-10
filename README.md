@@ -664,6 +664,36 @@ QB_SYNC_ENABLED=true                           # Enable automatic daily sync at 
 
 See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation.
 
+## 🚀 Deployment & Environments
+
+**Phase 3 Sprint 3**: Production-ready deployment strategy for Vercel (frontends) and Railway (backend + database).
+
+**Architecture**:
+- **Frontends**: `customer-portal` and `internal-dashboard` deployed to Vercel
+- **Backend**: `core-api` (NestJS + Dockerfile) deployed to Railway
+- **Database**: PostgreSQL 15 on Railway
+- **External Integrations**: JobNimbus API, QuickBooks OAuth2
+
+**Deployment Guides**:
+- **Vercel**: Step-by-step setup for both Next.js apps with environment variables
+- **Railway**: Docker-based deployment with PostgreSQL provisioning
+- **Environment Variables**: Comprehensive `.env.example` files for all services
+- **Rollout Strategy**: Pre-deployment checklist, testing, and rollback procedures
+
+**Cost Estimates**:
+- Vercel Hobby: $0/month (2 projects, 100GB bandwidth)
+- Railway Starter: ~$5/month (API + PostgreSQL)
+- **Total Infrastructure**: ~$5-10/month
+
+**Files**:
+- `apps/core-api/Dockerfile` - Production-ready multi-stage Docker build
+- `apps/core-api/.dockerignore` - Optimized Docker context
+- `.env.example` - Consolidated environment variables for all services
+- `apps/internal-dashboard/.env.example` - Dashboard-specific env vars
+
+**Documentation**:
+See **[Deployment & Environments Guide](docs/11-deployment-and-environments.md)** for complete deployment instructions, troubleshooting, and best practices.
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.
