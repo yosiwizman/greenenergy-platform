@@ -14,8 +14,7 @@ export class InternalApiKeyGuard implements CanActivate {
   private readonly internalApiKey: string;
 
   constructor(private configService: ConfigService) {
-    this.internalApiKey =
-      this.configService.get<string>('INTERNAL_API_KEY') || '';
+    this.internalApiKey = this.configService.get<string>('INTERNAL_API_KEY') || '';
 
     if (!this.internalApiKey) {
       this.logger.warn(

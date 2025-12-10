@@ -128,8 +128,11 @@ export class SchedulingService {
 
     // 3. Check subcontractor status
     const primaryAssignment = job.subcontractorAssignments?.[0];
-    const subcontractorStatus = primaryAssignment?.subcontractor
-      ?.performanceStatus as 'GREEN' | 'YELLOW' | 'RED' | null;
+    const subcontractorStatus = primaryAssignment?.subcontractor?.performanceStatus as
+      | 'GREEN'
+      | 'YELLOW'
+      | 'RED'
+      | null;
     const subcontractorName = primaryAssignment?.subcontractor?.name || null;
 
     if (subcontractorStatus === 'RED') {
@@ -206,7 +209,7 @@ export class SchedulingService {
     }
 
     const daysUntilDelivery = Math.ceil(
-      (expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      (expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
 
     if (daysUntilDelivery <= 3 && daysUntilDelivery >= 0) {
@@ -221,7 +224,7 @@ export class SchedulingService {
    */
   private upgradeRiskLevel(
     current: SchedulingRiskLevel,
-    proposed: SchedulingRiskLevel,
+    proposed: SchedulingRiskLevel
   ): SchedulingRiskLevel {
     const levels: SchedulingRiskLevel[] = ['LOW', 'MEDIUM', 'HIGH'];
     const currentIndex = levels.indexOf(current);

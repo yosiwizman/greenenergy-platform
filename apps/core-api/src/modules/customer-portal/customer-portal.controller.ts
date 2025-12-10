@@ -99,7 +99,7 @@ export class CustomerPortalController {
   async createWarrantyClaim(
     @Param('jobId') jobId: string,
     @Query('token') token: string,
-    @Body() body: { title: string; description: string },
+    @Body() body: { title: string; description: string }
   ): Promise<WarrantyClaimDTO> {
     if (!token) {
       throw new UnauthorizedException('Token is required');
@@ -131,7 +131,7 @@ export class CustomerPortalController {
         customerUserId: session.customerUserId,
         jobId: session.jobId,
       },
-      body,
+      body
     );
   }
 }

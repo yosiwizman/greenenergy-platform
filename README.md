@@ -491,6 +491,61 @@ ETA_AT_RISK_THRESHOLD_DAYS=3               # Days threshold for at-risk status
 
 See **[Material & Scheduling System](docs/09-material-scheduling-system.md)** for detailed documentation.
 
+## 🤖 AI Operations Assistant
+
+Phase 2 Sprint 5 introduced an AI-powered operations assistant that generates job summaries, actionable recommendations, and customer-facing message drafts using deterministic rule-based logic.
+
+**Features**:
+
+- ✅ Comprehensive job summaries aggregating data from QC, Risk, Safety, Materials, and Warranty
+- ✅ Prioritized recommendations (QC, RISK, SAFETY, MATERIALS, SCHEDULING, WARRANTY, GENERAL)
+- ✅ Customer message generator with tone control (FRIENDLY/FORMAL) and message types
+- ✅ Job lookup dashboard with collapsible sections and recommendations table
+- ✅ Designed for future LLM integration (OpenAI, Anthropic, local models)
+- ✅ 22 comprehensive test cases covering all scenarios
+
+**API Endpoints**:
+
+```
+GET   /api/v1/ai-ops/jobs/:jobId/summary            # Get AI-generated job summary
+GET   /api/v1/ai-ops/jobs/:jobId/recommendations    # Get actionable recommendations
+GET   /api/v1/ai-ops/jobs/:jobId/insights           # Get summary + recommendations
+POST  /api/v1/ai-ops/jobs/:jobId/customer-message   # Generate customer message
+```
+
+**Dashboard Routes**:
+
+- `/ai-ops` - AI Assistant with job lookup, summary display, recommendations table, and message generator
+
+**Message Types**: STATUS_UPDATE | ETA_UPDATE | GENERIC
+
+**Recommendation Categories**: QC | RISK | SAFETY | MATERIALS | SCHEDULING | WARRANTY | CUSTOMER | GENERAL
+
+**Priority Levels**: HIGH | MEDIUM | LOW
+
+**AI Logic v1 (Rules-Based)**:
+- QC FAIL → HIGH priority QC recommendation
+- Risk HIGH → HIGH priority RISK recommendation
+- Safety incidents (CRITICAL/HIGH) → HIGH priority SAFETY recommendation
+- Material ETA LATE → HIGH priority MATERIALS recommendation
+- Subcontractor RED performance → HIGH priority SCHEDULING recommendation
+- Open warranty claims → MEDIUM priority WARRANTY recommendation
+- Always includes GENERAL recommendation with next best action
+
+**Customer Message Generation**:
+- STATUS_UPDATE: Current status + next step based on job phase
+- ETA_UPDATE: Material delivery status + installation timeline
+- GENERIC: Custom question response with job context
+- Tone control for friendly or formal language
+
+**Future Enhancements (v2)**:
+- Real LLM integration (OpenAI, Anthropic, local models)
+- Multi-job portfolio insights
+- Predictive recommendations
+- Proactive alerts for HIGH priority items
+
+See **[AI Operations Assistant](docs/10-ai-operations-assistant.md)** for detailed documentation.
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.

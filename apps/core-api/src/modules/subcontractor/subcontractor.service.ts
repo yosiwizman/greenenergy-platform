@@ -95,9 +95,7 @@ export class SubcontractorService {
         licenseNumber: input.licenseNumber,
         licenseExpiresAt: input.licenseExpiresAt ? new Date(input.licenseExpiresAt) : null,
         insurancePolicyNumber: input.insurancePolicyNumber,
-        insuranceExpiresAt: input.insuranceExpiresAt
-          ? new Date(input.insuranceExpiresAt)
-          : null,
+        insuranceExpiresAt: input.insuranceExpiresAt ? new Date(input.insuranceExpiresAt) : null,
         w9Received: input.w9Received || false,
         coiReceived: input.coiReceived || false,
         specialties: input.specialties || [],
@@ -113,10 +111,7 @@ export class SubcontractorService {
   /**
    * Update a subcontractor
    */
-  async updateSubcontractor(
-    id: string,
-    input: UpdateSubcontractorDto
-  ): Promise<SubcontractorDTO> {
+  async updateSubcontractor(id: string, input: UpdateSubcontractorDto): Promise<SubcontractorDTO> {
     this.logger.log(`Updating subcontractor: ${id}`);
 
     const existing = await prisma.subcontractor.findUnique({ where: { id } });
@@ -215,10 +210,7 @@ export class SubcontractorService {
 
     if (!subcontractor.insurancePolicyNumber) {
       missingItems.push('INSURANCE_MISSING');
-    } else if (
-      !subcontractor.insuranceExpiresAt ||
-      subcontractor.insuranceExpiresAt <= now
-    ) {
+    } else if (!subcontractor.insuranceExpiresAt || subcontractor.insuranceExpiresAt <= now) {
       missingItems.push('INSURANCE_EXPIRED');
     }
 
@@ -328,9 +320,7 @@ export class SubcontractorService {
 
       for (const assignment of assignments) {
         if (!assignment.job.jobNimbusId) {
-          this.logger.warn(
-            `Job ${assignment.jobId} has no JobNimbus ID, skipping notification`
-          );
+          this.logger.warn(`Job ${assignment.jobId} has no JobNimbus ID, skipping notification`);
           continue;
         }
 
@@ -349,9 +339,7 @@ export class SubcontractorService {
             dueDate: tomorrow.toISOString(),
           });
 
-          this.logger.log(
-            `Created JobNimbus note and task for job ${assignment.job.jobNimbusId}`
-          );
+          this.logger.log(`Created JobNimbus note and task for job ${assignment.job.jobNimbusId}`);
         } catch (error) {
           this.logger.error(
             `Failed to create JobNimbus notification for job ${assignment.job.jobNimbusId}: ${error instanceof Error ? error.message : String(error)}`
@@ -372,9 +360,7 @@ export class SubcontractorService {
     jobId: string,
     input: AssignSubcontractorDto
   ): Promise<JobSubcontractorAssignmentDTO> {
-    this.logger.log(
-      `Assigning subcontractor ${input.subcontractorId} to job ${jobId}`
-    );
+    this.logger.log(`Assigning subcontractor ${input.subcontractorId} to job ${jobId}`);
 
     // Verify job exists
     const job = await prisma.job.findUnique({ where: { id: jobId } });
@@ -388,9 +374,7 @@ export class SubcontractorService {
     });
 
     if (!subcontractor) {
-      throw new NotFoundException(
-        `Subcontractor with ID ${input.subcontractorId} not found`
-      );
+      throw new NotFoundException(`Subcontractor with ID ${input.subcontractorId} not found`);
     }
 
     if (!subcontractor.isActive) {
@@ -478,16 +462,27 @@ export class SubcontractorService {
       orderBy: [{ isPrimary: 'desc' }, { assignedAt: 'asc' }],
     });
 
-    return assignments.map((a: { id: string; jobId: string; subcontractorId: string; subcontractor: { name: string }; role: string | null; assignedAt: Date; unassignedAt: Date | null; isPrimary: boolean }) => ({
-      id: a.id,
-      jobId: a.jobId,
-      subcontractorId: a.subcontractorId,
-      subcontractorName: a.subcontractor.name,
-      role: a.role || undefined,
-      assignedAt: a.assignedAt.toISOString(),
-      unassignedAt: a.unassignedAt?.toISOString(),
-      isPrimary: a.isPrimary,
-    }));
+    return assignments.map(
+      (a: {
+        id: string;
+        jobId: string;
+        subcontractorId: string;
+        subcontractor: { name: string };
+        role: string | null;
+        assignedAt: Date;
+        unassignedAt: Date | null;
+        isPrimary: boolean;
+      }) => ({
+        id: a.id,
+        jobId: a.jobId,
+        subcontractorId: a.subcontractorId,
+        subcontractorName: a.subcontractor.name,
+        role: a.role || undefined,
+        assignedAt: a.assignedAt.toISOString(),
+        unassignedAt: a.unassignedAt?.toISOString(),
+        isPrimary: a.isPrimary,
+      })
+    );
   }
 
   /**

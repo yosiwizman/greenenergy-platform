@@ -281,7 +281,7 @@ describe('SchedulingService', () => {
       (prisma.job.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.getSchedulingForJob('non-existent')).rejects.toThrow(
-        'Job with ID non-existent not found',
+        'Job with ID non-existent not found'
       );
     });
   });

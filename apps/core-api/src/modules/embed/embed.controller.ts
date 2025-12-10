@@ -34,25 +34,15 @@ export class EmbedController {
    */
   @Post('links')
   @UseGuards(InternalApiKeyGuard)
-  async generateEmbedLink(
-    @Body() dto: GenerateEmbedLinkDto
-  ): Promise<EmbedLinkResponse> {
-    this.logger.log(
-      `Generating embed link for job ${dto.jobId}, panel ${dto.panelType}`
-    );
+  async generateEmbedLink(@Body() dto: GenerateEmbedLinkDto): Promise<EmbedLinkResponse> {
+    this.logger.log(`Generating embed link for job ${dto.jobId}, panel ${dto.panelType}`);
 
     try {
-      const result = await this.embedService.generateEmbedLink(
-        dto.jobId,
-        dto.panelType
-      );
+      const result = await this.embedService.generateEmbedLink(dto.jobId, dto.panelType);
       return result;
     } catch (error) {
       const err = error as Error;
-      this.logger.error(
-        `Failed to generate embed link: ${err.message}`,
-        err.stack
-      );
+      this.logger.error(`Failed to generate embed link: ${err.message}`, err.stack);
 
       if (err.message.includes('not found')) {
         throw new HttpException(err.message, HttpStatus.NOT_FOUND);
@@ -70,14 +60,9 @@ export class EmbedController {
    * Resolve an embed token to get session payload
    */
   @Get('session/resolve')
-  async resolveSession(
-    @Query('token') token: string
-  ): Promise<{ payload: EmbedSessionPayload }> {
+  async resolveSession(@Query('token') token: string): Promise<{ payload: EmbedSessionPayload }> {
     if (!token) {
-      throw new HttpException(
-        'Token query parameter is required',
-        HttpStatus.BAD_REQUEST
-      );
+      throw new HttpException('Token query parameter is required', HttpStatus.BAD_REQUEST);
     }
 
     this.logger.log('Resolving embed session token');
@@ -87,10 +72,7 @@ export class EmbedController {
       return { payload };
     } catch (error) {
       const err = error as Error;
-      this.logger.error(
-        `Failed to resolve embed session: ${err.message}`,
-        err.stack
-      );
+      this.logger.error(`Failed to resolve embed session: ${err.message}`, err.stack);
 
       if (err instanceof HttpException) {
         throw err;

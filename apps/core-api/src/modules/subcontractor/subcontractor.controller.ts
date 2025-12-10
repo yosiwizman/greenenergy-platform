@@ -66,9 +66,7 @@ export class SubcontractorController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createSubcontractor(
-    @Body() input: CreateSubcontractorDto
-  ): Promise<SubcontractorDTO> {
+  async createSubcontractor(@Body() input: CreateSubcontractorDto): Promise<SubcontractorDTO> {
     return this.subcontractorService.createSubcontractor(input);
   }
 
@@ -115,9 +113,7 @@ export class SubcontractorController {
    */
   @Post(':id/performance/evaluate')
   @HttpCode(HttpStatus.OK)
-  async evaluatePerformance(
-    @Param('id') id: string
-  ): Promise<SubcontractorPerformanceSummary> {
+  async evaluatePerformance(@Param('id') id: string): Promise<SubcontractorPerformanceSummary> {
     return this.subcontractorService.evaluateSubcontractorPerformance(id);
   }
 

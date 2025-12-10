@@ -213,9 +213,9 @@ describe('WarrantyService', () => {
     it('should calculate warranty counts correctly', async () => {
       // Mock count queries
       (prisma.warranty.count as jest.Mock)
-        .mockResolvedValueOnce(4)  // total
-        .mockResolvedValueOnce(2)  // active
-        .mockResolvedValueOnce(1)  // expiring soon
+        .mockResolvedValueOnce(4) // total
+        .mockResolvedValueOnce(2) // active
+        .mockResolvedValueOnce(1) // expiring soon
         .mockResolvedValueOnce(1); // expired
 
       const result = await service.getWarrantySummary();

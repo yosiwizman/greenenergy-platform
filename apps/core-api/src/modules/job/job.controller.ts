@@ -13,9 +13,7 @@ export class JobController {
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<Prisma.JobGetPayload<{
+  async findOne(@Param('id') id: string): Promise<Prisma.JobGetPayload<{
     include: {
       contacts: true;
       photos: true;

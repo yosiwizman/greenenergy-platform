@@ -745,3 +745,52 @@ export interface SchedulingRiskDTO {
   schedulingRiskLevel: SchedulingRiskLevel;
   reasons: string[];
 }
+
+// AI Operations Assistant Types (Phase 2 Sprint 5)
+export interface AiJobSummarySection {
+  title: string;
+  body: string;
+}
+
+export interface AiJobSummaryDTO {
+  jobId: string;
+  jobNumber?: string | null;
+  customerName?: string | null;
+  status: string;
+  overallSummary: string;
+  sections: AiJobSummarySection[];
+}
+
+export type AiRecommendationCategory =
+  | 'QC'
+  | 'RISK'
+  | 'SAFETY'
+  | 'MATERIALS'
+  | 'SCHEDULING'
+  | 'WARRANTY'
+  | 'CUSTOMER'
+  | 'GENERAL';
+
+export type AiRecommendationPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface AiJobRecommendationDTO {
+  id: string; // slug or stable ID
+  label: string; // short title
+  description: string; // 1-3 sentences
+  category: AiRecommendationCategory;
+  priority: AiRecommendationPriority;
+}
+
+export type AiCustomerMessageType = 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC';
+
+export interface AiCustomerMessageRequestDTO {
+  type: AiCustomerMessageType;
+  tone?: 'FRIENDLY' | 'FORMAL';
+  customQuestion?: string; // for GENERIC type
+}
+
+export interface AiCustomerMessageDTO {
+  jobId: string;
+  type: AiCustomerMessageType;
+  message: string;
+}

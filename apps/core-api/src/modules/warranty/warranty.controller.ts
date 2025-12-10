@@ -39,7 +39,7 @@ export class WarrantyController {
       coverageJson?: any;
       warrantyNumber?: string;
       documentUrl?: string;
-    },
+    }
   ): Promise<WarrantyDTO> {
     return this.warrantyService.activateWarrantyForJob(jobId, body);
   }
@@ -61,7 +61,7 @@ export class WarrantyController {
   async listWarranties(
     @Query('status') status?: WarrantyStatus,
     @Query('fromEndDate') fromEndDate?: string,
-    @Query('toEndDate') toEndDate?: string,
+    @Query('toEndDate') toEndDate?: string
   ): Promise<WarrantyDTO[]> {
     return this.warrantyService.listWarranties({
       status,
@@ -96,7 +96,7 @@ export class WarrantyController {
       customerName?: string;
       customerEmail?: string;
       customerPhone?: string;
-    },
+    }
   ): Promise<WarrantyClaimDTO> {
     return this.warrantyService.createClaimInternal(body);
   }
@@ -108,7 +108,7 @@ export class WarrantyController {
   @Get('claims')
   async listClaims(
     @Query('status') status?: WarrantyClaimStatus,
-    @Query('jobId') jobId?: string,
+    @Query('jobId') jobId?: string
   ): Promise<WarrantyClaimDTO[]> {
     return this.warrantyService.listClaims({ status, jobId });
   }
@@ -129,7 +129,7 @@ export class WarrantyController {
   @Patch('claims/:id/status')
   async updateClaimStatus(
     @Param('id') id: string,
-    @Body() body: { status: WarrantyClaimStatus },
+    @Body() body: { status: WarrantyClaimStatus }
   ): Promise<WarrantyClaimDTO> {
     return this.warrantyService.updateClaimStatus(id, body.status);
   }

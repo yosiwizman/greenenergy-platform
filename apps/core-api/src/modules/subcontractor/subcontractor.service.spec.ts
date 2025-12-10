@@ -252,9 +252,7 @@ describe('SubcontractorService', () => {
       const mockAssignments = [{ jobId: 'job-1' }, { jobId: 'job-2' }];
 
       (prisma.subcontractor.findUnique as jest.Mock).mockResolvedValue(mockSubcontractor);
-      (prisma.jobSubcontractorAssignment.findMany as jest.Mock).mockResolvedValue(
-        mockAssignments
-      );
+      (prisma.jobSubcontractorAssignment.findMany as jest.Mock).mockResolvedValue(mockAssignments);
       (prisma.qCPhotoCheck.count as jest.Mock).mockResolvedValue(3); // 3 QC failures
       (prisma.safetyIncident.count as jest.Mock).mockResolvedValue(0);
       (prisma.subcontractor.update as jest.Mock).mockResolvedValue({

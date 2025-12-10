@@ -13,6 +13,7 @@ import { MaterialModule } from './modules/material/material.module';
 import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
 import { EmbedModule } from './modules/embed/embed.module';
+import { AiOpsModule } from './modules/ai-ops/ai-ops.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -33,6 +34,7 @@ import { HealthController } from './health.controller';
     SchedulingModule,
     CustomerPortalModule,
     EmbedModule,
+    AiOpsModule,
   ],
   controllers: [HealthController],
 })

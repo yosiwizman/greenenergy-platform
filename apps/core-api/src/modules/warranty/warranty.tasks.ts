@@ -9,7 +9,7 @@ export class WarrantyTasks {
 
   constructor(
     private readonly warrantyService: WarrantyService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   /**
@@ -27,7 +27,7 @@ export class WarrantyTasks {
     } catch (error) {
       this.logger.error(
         `Failed processing expiring warranties (days=${days}):`,
-        error instanceof Error ? error.stack : String(error),
+        error instanceof Error ? error.stack : String(error)
       );
     }
   }

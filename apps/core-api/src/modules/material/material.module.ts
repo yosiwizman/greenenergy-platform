@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
- import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { MaterialService } from './material.service';
 import { MaterialController } from './material.controller';
 

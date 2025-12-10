@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  UnauthorizedException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { prisma } from '@greenenergy/db';
 import * as jwt from 'jsonwebtoken';
@@ -25,12 +20,10 @@ export class EmbedService {
       this.configService.get<string>('EMBED_SIGNING_SECRET') ||
       'default-secret-change-in-production';
 
-    this.tokenTTLMinutes =
-      this.configService.get<number>('EMBED_TOKEN_TTL_MINUTES') || 30;
+    this.tokenTTLMinutes = this.configService.get<number>('EMBED_TOKEN_TTL_MINUTES') || 30;
 
     this.dashboardBaseUrl =
-      this.configService.get<string>('INTERNAL_DASHBOARD_BASE_URL') ||
-      'http://localhost:3002';
+      this.configService.get<string>('INTERNAL_DASHBOARD_BASE_URL') || 'http://localhost:3002';
 
     if (this.signingSecret === 'default-secret-change-in-production') {
       this.logger.warn(
@@ -42,11 +35,7 @@ export class EmbedService {
   /**
    * Generate a signed embed token
    */
-  generateToken(
-    jobId: string,
-    panelType: EmbeddedPanelType,
-    ttlMinutes?: number
-  ): string {
+  generateToken(jobId: string, panelType: EmbeddedPanelType, ttlMinutes?: number): string {
     const ttl = ttlMinutes || this.tokenTTLMinutes;
     const exp = Math.floor(Date.now() / 1000) + ttl * 60; // Convert minutes to seconds
 
@@ -81,9 +70,7 @@ export class EmbedService {
       return decoded;
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {
-        throw new UnauthorizedException(
-          `Invalid embed token: ${error.message}`
-        );
+        throw new UnauthorizedException(`Invalid embed token: ${error.message}`);
       }
       throw error;
     }
@@ -92,10 +79,7 @@ export class EmbedService {
   /**
    * Generate an embed link for a job and panel type
    */
-  async generateEmbedLink(
-    jobId: string,
-    panelType: EmbeddedPanelType
-  ): Promise<EmbedLinkResponse> {
+  async generateEmbedLink(jobId: string, panelType: EmbeddedPanelType): Promise<EmbedLinkResponse> {
     // Verify job exists
     const job = await prisma.job.findUnique({
       where: { id: jobId },
@@ -151,9 +135,7 @@ export class EmbedService {
     });
 
     if (!job) {
-      throw new NotFoundException(
-        `Job not found: ${payload.jobId}`
-      );
+      throw new NotFoundException(`Job not found: ${payload.jobId}`);
     }
 
     return payload;

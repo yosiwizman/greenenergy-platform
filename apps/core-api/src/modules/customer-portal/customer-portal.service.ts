@@ -182,13 +182,21 @@ export class CustomerPortalService {
     const statusTimeline = this.buildStatusTimeline(job.status);
 
     // Map photos
-    const photos: PortalJobPhoto[] = job.photos.map((photo: { id: string; category: string | null; fileUrl: string; fileName: string; uploadedAt: Date }) => ({
-      id: photo.id,
-      category: this.mapPhotoCategory(photo.category),
-      url: photo.fileUrl,
-      caption: photo.fileName,
-      takenAt: photo.uploadedAt.toISOString(),
-    }));
+    const photos: PortalJobPhoto[] = job.photos.map(
+      (photo: {
+        id: string;
+        category: string | null;
+        fileUrl: string;
+        fileName: string;
+        uploadedAt: Date;
+      }) => ({
+        id: photo.id,
+        category: this.mapPhotoCategory(photo.category),
+        url: photo.fileUrl,
+        caption: photo.fileName,
+        takenAt: photo.uploadedAt.toISOString(),
+      })
+    );
 
     // Map documents
     const documents: PortalJobDocument[] = [];

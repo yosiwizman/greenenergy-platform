@@ -30,7 +30,7 @@ export class MaterialController {
   @HttpCode(HttpStatus.CREATED)
   async createOrder(
     @Param('jobId') jobId: string,
-    @Body() payload: CreateMaterialOrderDto,
+    @Body() payload: CreateMaterialOrderDto
   ): Promise<MaterialOrderDTO> {
     return this.materialService.createOrder(jobId, payload);
   }
@@ -42,7 +42,7 @@ export class MaterialController {
   @Patch(':id')
   async updateOrder(
     @Param('id') id: string,
-    @Body() payload: UpdateMaterialOrderDto,
+    @Body() payload: UpdateMaterialOrderDto
   ): Promise<MaterialOrderDTO> {
     return this.materialService.updateOrder(id, payload);
   }
@@ -54,7 +54,7 @@ export class MaterialController {
   @Get()
   async listOrders(
     @Query('jobId') jobId?: string,
-    @Query('status') status?: MaterialOrderStatus,
+    @Query('status') status?: MaterialOrderStatus
   ): Promise<MaterialOrderDTO[]> {
     return this.materialService.listOrders({ jobId, status });
   }

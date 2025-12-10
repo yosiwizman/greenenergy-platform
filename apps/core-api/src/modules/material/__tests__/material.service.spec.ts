@@ -92,7 +92,7 @@ describe('MaterialService', () => {
       (prisma.job.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.createOrder(jobId, payload)).rejects.toThrow(
-        'Job with ID non-existent-job not found',
+        'Job with ID non-existent-job not found'
       );
     });
   });

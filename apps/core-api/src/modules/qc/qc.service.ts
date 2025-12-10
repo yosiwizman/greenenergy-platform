@@ -247,31 +247,39 @@ export class QCService {
       },
     });
 
-    return jobs.map((job: { id: string; jobNimbusId: string | null; customerName: string | null; qcPhotoChecks: Array<{ status: string; checkedAt: Date }>; photos: Array<{ category: string | null }> }) => {
-      const latestCheck = job.qcPhotoChecks[0];
-      const photoCounts = job.photos.reduce(
-        (acc: Record<PhotoCategory, number>, p: { category: string | null }) => {
-          if (
-            p.category &&
-            (p.category === 'BEFORE' || p.category === 'DURING' || p.category === 'AFTER')
-          ) {
-            acc[p.category as PhotoCategory]++;
-          }
-          return acc;
-        },
-        { BEFORE: 0, DURING: 0, AFTER: 0 } as Record<PhotoCategory, number>
-      );
+    return jobs.map(
+      (job: {
+        id: string;
+        jobNimbusId: string | null;
+        customerName: string | null;
+        qcPhotoChecks: Array<{ status: string; checkedAt: Date }>;
+        photos: Array<{ category: string | null }>;
+      }) => {
+        const latestCheck = job.qcPhotoChecks[0];
+        const photoCounts = job.photos.reduce(
+          (acc: Record<PhotoCategory, number>, p: { category: string | null }) => {
+            if (
+              p.category &&
+              (p.category === 'BEFORE' || p.category === 'DURING' || p.category === 'AFTER')
+            ) {
+              acc[p.category as PhotoCategory]++;
+            }
+            return acc;
+          },
+          { BEFORE: 0, DURING: 0, AFTER: 0 } as Record<PhotoCategory, number>
+        );
 
-      return {
-        jobId: job.id,
-        jobName: job.customerName || 'Unknown',
-        qcStatus: latestCheck ? (latestCheck.status as QCCheckStatus) : 'NOT_CHECKED',
-        totalPhotos: photoCounts.BEFORE + photoCounts.DURING + photoCounts.AFTER,
-        beforeCount: photoCounts.BEFORE,
-        duringCount: photoCounts.DURING,
-        afterCount: photoCounts.AFTER,
-        lastCheckedAt: latestCheck ? latestCheck.checkedAt.toISOString() : undefined,
-      };
-    });
+        return {
+          jobId: job.id,
+          jobName: job.customerName || 'Unknown',
+          qcStatus: latestCheck ? (latestCheck.status as QCCheckStatus) : 'NOT_CHECKED',
+          totalPhotos: photoCounts.BEFORE + photoCounts.DURING + photoCounts.AFTER,
+          beforeCount: photoCounts.BEFORE,
+          duringCount: photoCounts.DURING,
+          afterCount: photoCounts.AFTER,
+          lastCheckedAt: latestCheck ? latestCheck.checkedAt.toISOString() : undefined,
+        };
+      }
+    );
   }
 }

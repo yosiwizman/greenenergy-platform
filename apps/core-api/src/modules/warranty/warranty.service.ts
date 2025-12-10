@@ -43,7 +43,7 @@ export class WarrantyService {
       coverageJson?: unknown;
       warrantyNumber?: string;
       documentUrl?: string;
-    },
+    }
   ): Promise<WarrantyDTO> {
     this.logger.log(`Activating warranty for job: ${jobId}`);
 
@@ -55,7 +55,7 @@ export class WarrantyService {
 
     // Determine start date: prefer job completion date, else now
     const startDate = job.completionDate || new Date();
-    
+
     // Calculate end date based on term (default 120 months = 10 years)
     const termMonths = input.termMonths || 120;
     const endDate = new Date(startDate);
@@ -101,7 +101,7 @@ export class WarrantyService {
         this.logger.log(`JobNimbus note created for warranty activation on job ${jobId}`);
       } catch (error) {
         this.logger.error(
-          `Failed to create JobNimbus note for warranty: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to create JobNimbus note for warranty: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -257,7 +257,7 @@ export class WarrantyService {
 
       try {
         const daysUntilExpiry = Math.ceil(
-          (warranty.endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000),
+          (warranty.endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)
         );
 
         // Create note
@@ -277,7 +277,7 @@ export class WarrantyService {
         this.logger.log(`Created expiry notification for warranty ${warranty.id}`);
       } catch (error) {
         this.logger.error(
-          `Failed to create expiry notification for warranty ${warranty.id}: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to create expiry notification for warranty ${warranty.id}: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -326,7 +326,7 @@ export class WarrantyService {
         });
       } catch (error) {
         this.logger.error(
-          `Failed to create JobNimbus note for claim: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to create JobNimbus note for claim: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -339,7 +339,7 @@ export class WarrantyService {
    */
   async createClaimFromPortal(
     portalSession: { customerUserId: string; jobId: string },
-    input: { title: string; description: string },
+    input: { title: string; description: string }
   ): Promise<WarrantyClaimDTO> {
     this.logger.log(`Creating portal warranty claim for job: ${portalSession.jobId}`);
 
@@ -392,7 +392,7 @@ export class WarrantyService {
         });
       } catch (error) {
         this.logger.error(
-          `Failed to create JobNimbus notification for portal claim: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to create JobNimbus notification for portal claim: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }

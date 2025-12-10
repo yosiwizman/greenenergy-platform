@@ -17,9 +17,7 @@ export class JobService {
     });
   }
 
-  async findOne(
-    id: string,
-  ): Promise<Prisma.JobGetPayload<{
+  async findOne(id: string): Promise<Prisma.JobGetPayload<{
     include: {
       contacts: true;
       photos: true;

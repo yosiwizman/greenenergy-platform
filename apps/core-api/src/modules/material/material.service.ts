@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
 import type {
   MaterialOrderDTO,
@@ -22,10 +17,7 @@ export class MaterialService {
   /**
    * Create a new material order
    */
-  async createOrder(
-    jobId: string,
-    payload: CreateMaterialOrderDto,
-  ): Promise<MaterialOrderDTO> {
+  async createOrder(jobId: string, payload: CreateMaterialOrderDto): Promise<MaterialOrderDTO> {
     this.logger.log(`Creating material order for job ${jobId}: ${payload.materialName}`);
 
     // Verify job exists
@@ -59,10 +51,7 @@ export class MaterialService {
   /**
    * Update an existing material order
    */
-  async updateOrder(
-    id: string,
-    payload: UpdateMaterialOrderDto,
-  ): Promise<MaterialOrderDTO> {
+  async updateOrder(id: string, payload: UpdateMaterialOrderDto): Promise<MaterialOrderDTO> {
     this.logger.log(`Updating material order ${id}`);
 
     const existing = await prisma.materialOrder.findUnique({ where: { id } });
@@ -154,7 +143,7 @@ export class MaterialService {
 
     const totalOrders = allOrders.length;
     const openOrders = allOrders.filter(
-      (o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED',
+      (o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED'
     ).length;
     const deliveredOrders = allOrders.filter((o) => o.status === 'DELIVERED').length;
 
@@ -192,9 +181,7 @@ export class MaterialService {
       expectedDeliveryDate: order.expectedDeliveryDate
         ? order.expectedDeliveryDate.toISOString()
         : null,
-      actualDeliveryDate: order.actualDeliveryDate
-        ? order.actualDeliveryDate.toISOString()
-        : null,
+      actualDeliveryDate: order.actualDeliveryDate ? order.actualDeliveryDate.toISOString() : null,
       trackingUrl: order.trackingUrl || null,
       notes: order.notes || null,
       etaStatus,
@@ -227,7 +214,7 @@ export class MaterialService {
 
     // If expected date is within threshold days, mark AT_RISK
     const daysUntilDelivery = Math.ceil(
-      (expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      (expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
 
     if (daysUntilDelivery <= this.ETA_AT_RISK_THRESHOLD_DAYS && daysUntilDelivery >= 0) {

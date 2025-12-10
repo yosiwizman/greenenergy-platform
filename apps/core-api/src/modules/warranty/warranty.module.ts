@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
- import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { WarrantyService } from './warranty.service';
 import { WarrantyController } from './warranty.controller';
 import { WarrantyTasks } from './warranty.tasks';

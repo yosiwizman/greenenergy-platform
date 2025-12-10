@@ -153,10 +153,7 @@ export class SafetyService {
   /**
    * Update incident status
    */
-  async updateIncidentStatus(
-    id: string,
-    status: SafetyIncidentStatus
-  ): Promise<SafetyIncidentDTO> {
+  async updateIncidentStatus(id: string, status: SafetyIncidentStatus): Promise<SafetyIncidentDTO> {
     this.logger.log(`Updating incident ${id} status to ${status}`);
 
     const incident = await prisma.safetyIncident.update({
@@ -367,16 +364,27 @@ export class SafetyService {
       orderBy: { date: 'desc' },
     });
 
-    return checklists.map((checklist: { id: string; jobId: string | null; subcontractorId: string | null; type: string; date: Date; completedBy: string | null; notes: string | null; itemsJson: any }) => ({
-      id: checklist.id,
-      jobId: checklist.jobId || undefined,
-      subcontractorId: checklist.subcontractorId || undefined,
-      type: checklist.type as SafetyChecklistType,
-      date: checklist.date.toISOString(),
-      completedBy: checklist.completedBy || undefined,
-      notes: checklist.notes || undefined,
-      items: checklist.itemsJson as any,
-    }));
+    return checklists.map(
+      (checklist: {
+        id: string;
+        jobId: string | null;
+        subcontractorId: string | null;
+        type: string;
+        date: Date;
+        completedBy: string | null;
+        notes: string | null;
+        itemsJson: any;
+      }) => ({
+        id: checklist.id,
+        jobId: checklist.jobId || undefined,
+        subcontractorId: checklist.subcontractorId || undefined,
+        type: checklist.type as SafetyChecklistType,
+        date: checklist.date.toISOString(),
+        completedBy: checklist.completedBy || undefined,
+        notes: checklist.notes || undefined,
+        items: checklist.itemsJson as any,
+      })
+    );
   }
 
   /**
