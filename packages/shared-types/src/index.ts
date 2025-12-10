@@ -29,13 +29,7 @@ export enum RiskLevel {
   CRITICAL = 'CRITICAL',
 }
 
-export enum WarrantyStatus {
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  CLAIM_FILED = 'CLAIM_FILED',
-  CLAIM_APPROVED = 'CLAIM_APPROVED',
-  CLAIM_DENIED = 'CLAIM_DENIED',
-}
+// WarrantyStatus moved to Phase 2 Sprint 3 section below (now a type union, not enum)
 
 export enum SubcontractorScoreTier {
   EXCELLENT = 'EXCELLENT',
@@ -166,6 +160,60 @@ export interface SafetyIncident {
   createdAt: Date;
 }
 
+// Warranty System Types (Phase 2 Sprint 3) - replaced old interface
+export type WarrantyStatus =
+  | 'PENDING_ACTIVATION'
+  | 'ACTIVE'
+  | 'EXPIRED'
+  | 'CANCELLED';
+
+export interface WarrantyDTO {
+  id: string;
+  jobId: string;
+  warrantyNumber?: string;
+  type: string;
+  provider?: string;
+  startDate: string;
+  endDate: string;
+  status: WarrantyStatus;
+  coverageSummary?: string; // derived from coverageJson
+  documentUrl?: string;
+  activatedAt?: string;
+}
+
+export type WarrantyClaimStatus =
+  | 'OPEN'
+  | 'IN_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'RESOLVED';
+
+export type WarrantyClaimPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface WarrantyClaimDTO {
+  id: string;
+  jobId: string;
+  warrantyId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  source: 'PORTAL' | 'INTERNAL';
+  status: WarrantyClaimStatus;
+  priority: WarrantyClaimPriority;
+  title: string;
+  description: string;
+  reportedAt: string;
+  resolvedAt?: string;
+}
+
+export interface WarrantySummaryDTO {
+  total: number;
+  active: number;
+  expiringSoon: number;
+  expired: number;
+}
+
+// Legacy interface for backward compatibility
 export interface Warranty {
   id: string;
   jobId: string;
@@ -173,7 +221,7 @@ export interface Warranty {
   provider: string;
   startDate: Date;
   endDate: Date;
-  status: WarrantyStatus;
+  status: string;
   claimDetails?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -277,6 +325,7 @@ export interface PortalJobView {
   lastUpdatedAt?: string;
   photos: PortalJobPhoto[];
   documents: PortalJobDocument[];
+  warranty?: WarrantyDTO | null;
 }
 
 export interface CreatePortalSessionDto {

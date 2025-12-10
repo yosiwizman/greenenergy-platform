@@ -35,6 +35,7 @@ model Job {
   safetyIncidents SafetyIncident[]
   safetyChecklists SafetyChecklist[]
   warranties      Warranty[]
+  warrantyClaims  WarrantyClaim[]
   materialOrders  MaterialOrder[]
   subcontractorAssignments JobSubcontractorAssignment[]
 
@@ -321,22 +322,61 @@ model SafetyChecklist {
 }
 
 model Warranty {
-  id           String   @id @default(cuid())
-  jobId        String
-  warrantyType String
-  provider     String
-  startDate    DateTime
-  endDate      DateTime
-  status       String   @default("ACTIVE")
-  claimDetails String?  @db.Text
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  job            Job      @relation(fields: [jobId], references: [id])
+  jobId          String   @unique
 
-  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  warrantyNumber String?  // internal / external reference
+  type           String   // e.g. 'LABOR', 'MATERIAL', 'SYSTEM'
+  provider       String?  // manufacturer or company
+  startDate      DateTime
+  endDate        DateTime
+  status         String   // 'PENDING_ACTIVATION' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+  coverageJson   Json?    @db.JsonB // structured coverage details
+  documentUrl    String?  // link to stored PDF
+
+  activatedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  claims         WarrantyClaim[]
 
   @@index([jobId])
   @@index([status])
+  @@index([endDate])
   @@map("warranties")
+}
+
+model WarrantyClaim {
+  id             String    @id @default(cuid())
+  job            Job       @relation(fields: [jobId], references: [id])
+  jobId          String
+
+  warranty       Warranty? @relation(fields: [warrantyId], references: [id])
+  warrantyId     String?
+
+  customerName   String?
+  customerEmail  String?
+  customerPhone  String?
+
+  source         String    // 'PORTAL' | 'INTERNAL'
+  status         String    // 'OPEN' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'RESOLVED'
+  priority       String    // 'LOW' | 'MEDIUM' | 'HIGH'
+
+  title          String
+  description    String    @db.Text
+  reportedAt     DateTime  @default(now())
+  resolvedAt     DateTime?
+  internalNotes  String?   @db.Text
+
+  metadataJson   Json?     @db.JsonB
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([jobId])
+  @@index([warrantyId])
+  @@index([status])
+  @@map("warranty_claims")
 }
 
 model MaterialOrder {

@@ -9,6 +9,7 @@ import type {
   PortalJobStatusStep,
   PortalPhotoCategory,
   PortalDocumentType,
+  WarrantyStatus,
 } from '@greenenergy/shared-types';
 
 @Injectable()
@@ -192,15 +193,48 @@ export class CustomerPortalService {
     // Map documents
     const documents: PortalJobDocument[] = [];
 
-    // Add warranty documents
-    for (const warranty of job.warranties) {
-      documents.push({
+    // Fetch warranty separately (new schema has unique jobId)
+    const warranty = await prisma.warranty.findUnique({
+      where: { jobId },
+    });
+
+    // Map warranty to DTO for portal view
+    let warrantyDTO = null;
+    if (warranty) {
+      let coverageSummary: string | undefined;
+      if (warranty.coverageJson) {
+        try {
+          const coverage = JSON.parse(JSON.stringify(warranty.coverageJson));
+          coverageSummary = coverage.summary || JSON.stringify(coverage);
+        } catch {
+          coverageSummary = undefined;
+        }
+      }
+
+      warrantyDTO = {
         id: warranty.id,
-        type: 'WARRANTY',
-        name: `${warranty.warrantyType} Warranty - ${warranty.provider}`,
-        url: '#', // Placeholder - would need actual document storage
-        uploadedAt: warranty.createdAt.toISOString(),
-      });
+        jobId: warranty.jobId,
+        warrantyNumber: warranty.warrantyNumber || undefined,
+        type: warranty.type,
+        provider: warranty.provider || undefined,
+        startDate: warranty.startDate.toISOString(),
+        endDate: warranty.endDate.toISOString(),
+        status: warranty.status as WarrantyStatus,
+        coverageSummary,
+        documentUrl: warranty.documentUrl || undefined,
+        activatedAt: warranty.activatedAt?.toISOString(),
+      };
+
+      // Add warranty document if URL exists
+      if (warranty.documentUrl) {
+        documents.push({
+          id: warranty.id,
+          type: 'WARRANTY',
+          name: `${warranty.type} Warranty${warranty.provider ? ' - ' + warranty.provider : ''}`,
+          url: warranty.documentUrl,
+          uploadedAt: warranty.createdAt.toISOString(),
+        });
+      }
     }
 
     return {
@@ -213,6 +247,7 @@ export class CustomerPortalService {
       lastUpdatedAt: job.updatedAt.toISOString(),
       photos,
       documents,
+      warranty: warrantyDTO,
     };
   }
 

@@ -13,18 +13,22 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CustomerPortalService } from './customer-portal.service';
+import { WarrantyService } from '../warranty/warranty.service';
 import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
+import { prisma } from '@greenenergy/db';
 import type {
   CreatePortalSessionDto,
   PortalSessionResponse,
   ResolvePortalSessionResponse,
   PortalJobView,
+  WarrantyClaimDTO,
 } from '@greenenergy/shared-types';
 
 @Controller('api/v1/portal')
 export class CustomerPortalController {
   constructor(
     private readonly portalService: CustomerPortalService,
+    private readonly warrantyService: WarrantyService,
     private readonly configService: ConfigService
   ) {}
 
@@ -84,5 +88,50 @@ export class CustomerPortalController {
   @UseGuards(InternalApiKeyGuard)
   async getInternalJobView(@Param('jobId') jobId: string): Promise<PortalJobView> {
     return await this.portalService.buildInternalPortalJobView(jobId);
+  }
+
+  /**
+   * Submit warranty claim from customer portal
+   * POST /api/v1/portal/jobs/:jobId/warranty-claims
+   */
+  @Post('jobs/:jobId/warranty-claims')
+  @HttpCode(HttpStatus.CREATED)
+  async createWarrantyClaim(
+    @Param('jobId') jobId: string,
+    @Query('token') token: string,
+    @Body() body: { title: string; description: string },
+  ): Promise<WarrantyClaimDTO> {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+
+    // Validate session and get session info
+    const session = await prisma.portalSession.findUnique({
+      where: { token },
+      include: {
+        customerUser: true,
+      },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Invalid session token');
+    }
+
+    if (session.jobId !== jobId) {
+      throw new UnauthorizedException('Session token is not valid for this job');
+    }
+
+    if (new Date() > session.expiresAt) {
+      throw new UnauthorizedException('Session token has expired');
+    }
+
+    // Create claim using warranty service
+    return await this.warrantyService.createClaimFromPortal(
+      {
+        customerUserId: session.customerUserId,
+        jobId: session.jobId,
+      },
+      body,
+    );
   }
 }
