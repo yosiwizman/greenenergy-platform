@@ -1,0 +1,27 @@
+{
+  "name": "@greenenergy/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prisma database client for PostgreSQL",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.8.0"
+  },
+  "devDependencies": {
+    "@greenenergy/config": "workspace:*",
+    "prisma": "^5.8.0",
+    "typescript": "^5.3.3"
+  }
+}

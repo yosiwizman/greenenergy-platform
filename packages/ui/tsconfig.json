@@ -1,0 +1,12 @@
+{
+  "extends": "@greenenergy/config/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react",
+    "lib": ["ES2022", "DOM"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "incremental": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

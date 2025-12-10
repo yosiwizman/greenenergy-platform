@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { CustomerPortalService } from './customer-portal.service';
+import { CustomerPortalController } from './customer-portal.controller';
+
+@Module({
+  imports: [ConfigModule],
+  providers: [CustomerPortalService],
+  controllers: [CustomerPortalController],
+  exports: [CustomerPortalService],
+})
+export class CustomerPortalModule {}

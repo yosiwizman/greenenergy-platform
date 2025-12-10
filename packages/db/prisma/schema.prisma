@@ -1,0 +1,407 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id              String          @id @default(cuid())
+  jobNimbusId     String?         @unique
+  customerName    String
+  address         String
+  status          String          @default("LEAD")
+  assignedTo      String?
+  startDate       DateTime?
+  completionDate  DateTime?
+  systemSize      Float?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  contacts        Contact[]
+  syncLogs        JobSyncLog[]
+  photos          PhotoMetadata[]
+  qcResults       QCResult[]
+  qcPhotoChecks   QCPhotoCheck[]
+  riskFlags       RiskFlag[]
+  riskSnapshot    JobRiskSnapshot?
+  customerUsers   CustomerUser[]
+  portalSessions  PortalSession[]
+  safetyIncidents SafetyIncident[]
+  safetyChecklists SafetyChecklist[]
+  warranties      Warranty[]
+  materialOrders  MaterialOrder[]
+  subcontractorAssignments JobSubcontractorAssignment[]
+
+  @@index([jobNimbusId])
+  @@index([status])
+  @@map("jobs")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  jobNimbusId String?  @unique
+  jobId       String
+  name        String
+  email       String?
+  phone       String?
+  role        String
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("contacts")
+}
+
+model JobSyncLog {
+  id              String   @id @default(cuid())
+  jobId           String
+  syncType        String   // PULL or PUSH
+  status          String   // SUCCESS, FAILED, PARTIAL
+  recordsAffected Int      @default(0)
+  errorMessage    String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([createdAt])
+  @@map("job_sync_logs")
+}
+
+model PhotoMetadata {
+  id                      String      @id @default(cuid())
+  jobId                   String
+  jobNimbusAttachmentId   String?     @unique
+  fileName                String
+  fileUrl                 String
+  uploadedBy              String
+  uploadedAt              DateTime    @default(now())
+  category                String?
+  source                  String      @default("MANUAL") // JOBNIMBUS or MANUAL
+  qcStatus                String?
+  qcNotes                 String?     @db.Text
+
+  job                     Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  qcResults               QCResult[]
+
+  @@index([jobId])
+  @@index([qcStatus])
+  @@index([category])
+  @@map("photo_metadata")
+}
+
+model QCResult {
+  id            String         @id @default(cuid())
+  jobId         String
+  photoId       String?
+  checklistItem String
+  status        String         @default("PENDING")
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now())
+
+  job           Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  photo         PhotoMetadata? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+
+  @@index([jobId])
+  @@index([status])
+  @@map("qc_results")
+}
+
+model QCPhotoCheck {
+  id                     String   @id @default(cuid())
+  jobId                  String
+  status                 String   // PASS, FAIL, PENDING
+  checkedAt              DateTime @default(now())
+  missingCategoriesJson  String   @db.Text // JSON: {category, required, actual}[]
+  totalPhotosJson        String   @db.Text // JSON: {BEFORE: 5, DURING: 3, AFTER: 2}
+  jobNimbusSyncedAt      DateTime? // When we wrote back to JobNimbus
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  job                    Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([status])
+  @@map("qc_photo_checks")
+}
+
+model RiskFlag {
+  id              String    @id @default(cuid())
+  jobId           String
+  riskLevel       String
+  category        String
+  description     String    @db.Text
+  detectedBy      String
+  detectedAt      DateTime  @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?   @db.Text
+
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([riskLevel])
+  @@map("risk_flags")
+}
+
+model JobRiskSnapshot {
+  id              String    @id @default(cuid())
+  jobId           String    @unique      // one current snapshot per job
+  riskLevel       String                 // 'LOW' | 'MEDIUM' | 'HIGH'
+  reasonsJson     String    @db.Text     // JSON array of RiskReason objects
+  lastUpdatedAt   DateTime?              // copy of job's updatedAt at evaluation time
+  riskComputedAt  DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([riskLevel])
+  @@index([riskComputedAt])
+  @@map("job_risk_snapshots")
+}
+
+model CustomerUser {
+  id              String          @id @default(cuid())
+  jobId           String
+  email           String
+  name            String
+  magicLinkToken  String?         @unique
+  tokenExpiresAt  DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime        @default(now())
+
+  job             Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  portalSessions  PortalSession[]
+
+  @@unique([jobId, email])
+  @@index([email])
+  @@map("customer_users")
+}
+
+model PortalSession {
+  id             String       @id @default(cuid())
+  token          String       @unique
+  customerUser   CustomerUser @relation(fields: [customerUserId], references: [id], onDelete: Cascade)
+  customerUserId String
+  job            Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId          String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([token])
+  @@index([jobId])
+  @@index([customerUserId])
+  @@map("portal_sessions")
+}
+
+model Subcontractor {
+  id                      String           @id @default(cuid())
+  name                    String
+  legalName               String?
+  primaryContact          String?
+  email                   String?
+  phone                   String?
+  specialties             String[]
+  crewSize                Int?
+  
+  // Compliance fields
+  licenseNumber           String?
+  licenseExpiresAt        DateTime?
+  insurancePolicyNumber   String?
+  insuranceExpiresAt      DateTime?
+  w9Received              Boolean          @default(false)
+  coiReceived             Boolean          @default(false)
+  lastComplianceStatus    String?          // 'COMPLIANT' | 'NON_COMPLIANT' | null
+  
+  // Performance fields
+  performanceScore        Int?             // 0-100
+  performanceStatus       String?          // 'GREEN' | 'YELLOW' | 'RED'
+  lastEvaluatedAt         DateTime?
+  
+  // Legacy fields (keeping for backward compatibility)
+  scoreTier               String           @default("UNRATED")
+  averageScore            Float?
+  totalJobsCompleted      Int              @default(0)
+  isActive                Boolean          @default(true)
+  
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  documents               SubcontractorDocument[]
+  assignments             JobSubcontractorAssignment[]
+  safetyIncidents         SafetyIncident[]
+  safetyChecklists        SafetyChecklist[]
+
+  @@index([performanceStatus])
+  @@index([lastComplianceStatus])
+  @@index([scoreTier])
+  @@index([isActive])
+  @@map("subcontractors")
+}
+
+model SafetyIncident {
+  id              String   @id @default(cuid())
+  job             Job?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId           String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id], onDelete: SetNull)
+  subcontractorId String?
+
+  type            String   // 'INJURY', 'PROPERTY_DAMAGE', 'NEAR_MISS', 'VIOLATION', 'CREW_ISSUE'
+  severity        String   // 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+  description     String   @db.Text
+  occurredAt      DateTime
+  reportedAt      DateTime @default(now())
+  reportedBy      String?
+  location        String?  // free-text location
+  latitude        Float?
+  longitude       Float?
+
+  status          String   // 'OPEN', 'UNDER_REVIEW', 'CLOSED'
+  lostTimeDays    Int?     // days away from work (for OSHA)
+  medicalTreatmentRequired Boolean? // for OSHA classification
+
+  photos          SafetyIncidentPhoto[]
+  metadataJson    Json?    @db.JsonB
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([subcontractorId])
+  @@index([severity])
+  @@index([status])
+  @@index([occurredAt])
+  @@map("safety_incidents")
+}
+
+model SafetyIncidentPhoto {
+  id              String   @id @default(cuid())
+  incident        SafetyIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  incidentId      String
+  url             String
+  caption         String?
+  uploadedAt      DateTime @default(now())
+
+  @@index([incidentId])
+  @@map("safety_incident_photos")
+}
+
+model SafetyChecklist {
+  id              String   @id @default(cuid())
+  job             Job?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId           String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id], onDelete: SetNull)
+  subcontractorId String?
+
+  type            String   // 'TOOLBOX_TALK', 'PPE', 'LADDER', 'FALL_PROTECTION', 'HEAT_EXPOSURE', 'ELECTRICAL'
+  date            DateTime
+  completedBy     String?
+  notes           String?  @db.Text
+  itemsJson       Json     @db.JsonB // stores checklist item results
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([subcontractorId])
+  @@index([type])
+  @@index([date])
+  @@map("safety_checklists")
+}
+
+model Warranty {
+  id           String   @id @default(cuid())
+  jobId        String
+  warrantyType String
+  provider     String
+  startDate    DateTime
+  endDate      DateTime
+  status       String   @default("ACTIVE")
+  claimDetails String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([status])
+  @@map("warranties")
+}
+
+model MaterialOrder {
+  id                   String    @id @default(cuid())
+  jobId                String
+  supplier             String
+  orderNumber          String
+  orderDate            DateTime
+  expectedDeliveryDate DateTime
+  actualDeliveryDate   DateTime?
+  etaStatus            String    @default("ORDERED")
+  items                String    @db.Text
+  totalCost            Float?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  job                  Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([etaStatus])
+  @@map("material_orders")
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+model SubcontractorDocument {
+  id              String        @id @default(cuid())
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  subcontractorId String
+  type            String        // 'LICENSE', 'INSURANCE', 'W9', 'COI', 'OTHER'
+  name            String
+  url             String
+  uploadedAt      DateTime      @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([subcontractorId])
+  @@index([type])
+  @@map("subcontractor_documents")
+}
+
+model JobSubcontractorAssignment {
+  id              String        @id @default(cuid())
+  job             Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId           String
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  subcontractorId String
+  role            String?       // e.g. 'ROOF_INSTALL', 'ELECTRICAL', etc.
+  assignedAt      DateTime      @default(now())
+  unassignedAt    DateTime?
+  isPrimary       Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([jobId])
+  @@index([subcontractorId])
+  @@index([isPrimary])
+  @@map("job_subcontractor_assignments")
+}

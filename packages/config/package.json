@@ -1,0 +1,23 @@
+{
+  "name": "@greenenergy/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared configuration for ESLint, Prettier, TypeScript, and Tailwind",
+  "main": "index.js",
+  "exports": {
+    "./eslint-preset": "./eslint-preset.js",
+    "./eslint-config": "./eslint-config/index.js",
+    "./prettier-preset": "./prettier-preset.js",
+    "./tailwind": "./tailwind.config.js",
+    "./tailwind.config": "./tailwind.config.js",
+    "./tsconfig": "./tsconfig.json",
+    "./tsconfig.json": "./tsconfig.json"
+  },
+  "files": [
+    "eslint-preset.js",
+    "eslint-config",
+    "prettier-preset.js",
+    "tsconfig.json",
+    "tailwind.config.js"
+  ]
+}
