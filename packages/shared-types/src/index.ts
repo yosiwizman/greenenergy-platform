@@ -39,6 +39,18 @@ export enum SubcontractorScoreTier {
   UNRATED = 'UNRATED',
 }
 
+// Material Order Types (Phase 2 Sprint 4)
+export type MaterialOrderStatus =
+  | 'PENDING'
+  | 'ORDERED'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'DELAYED'
+  | 'CANCELLED';
+
+export type MaterialEtaStatus = 'ON_TRACK' | 'AT_RISK' | 'LATE';
+
+// Legacy enum for backward compatibility
 export enum MaterialETAStatus {
   ORDERED = 'ORDERED',
   IN_TRANSIT = 'IN_TRANSIT',
@@ -227,6 +239,54 @@ export interface Warranty {
   updatedAt: Date;
 }
 
+export interface MaterialOrderDTO {
+  id: string;
+  jobId: string;
+  supplierName: string;
+  orderNumber?: string | null;
+  materialName: string;
+  quantity?: number | null;
+  unit?: string | null;
+  status: MaterialOrderStatus;
+  orderedAt?: string | null;
+  expectedDeliveryDate?: string | null;
+  actualDeliveryDate?: string | null;
+  trackingUrl?: string | null;
+  notes?: string | null;
+  etaStatus: MaterialEtaStatus;
+}
+
+export interface MaterialSummaryDTO {
+  totalOrders: number;
+  openOrders: number;
+  delayedOrders: number;
+  deliveredOrders: number;
+}
+
+export interface CreateMaterialOrderDto {
+  supplierName: string;
+  materialName: string;
+  quantity?: number;
+  unit?: string;
+  orderNumber?: string;
+  expectedDeliveryDate?: string;
+  trackingUrl?: string;
+  notes?: string;
+}
+
+export interface UpdateMaterialOrderDto {
+  status?: MaterialOrderStatus;
+  expectedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  trackingUrl?: string;
+  notes?: string;
+  supplierName?: string;
+  materialName?: string;
+  quantity?: number;
+  unit?: string;
+}
+
+// Legacy interface for backward compatibility
 export interface MaterialOrder {
   id: string;
   jobId: string;
@@ -668,4 +728,20 @@ export interface OshalogSummaryDTO {
   restrictedOrTransferCases: number;
   otherRecordableCases: number;
   byIncidentType: Record<SafetyIncidentType, number>;
+}
+
+// Scheduling & Predictive Planning Types (Phase 2 Sprint 4)
+export type SchedulingRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface SchedulingRiskDTO {
+  jobId: string;
+  jobNumber?: string | null;
+  customerName?: string | null;
+  status: string; // job status
+  materialEtaStatus: MaterialEtaStatus;
+  hasHighRiskFlags: boolean; // from Risk service
+  subcontractorName?: string | null;
+  subcontractorStatus?: 'GREEN' | 'YELLOW' | 'RED' | null;
+  schedulingRiskLevel: SchedulingRiskLevel;
+  reasons: string[];
 }

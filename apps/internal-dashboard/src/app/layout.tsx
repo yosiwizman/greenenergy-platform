@@ -17,6 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Subcontractors', href: '/subcontractors' },
     { name: 'Safety', href: '/safety' },
     { name: 'Warranty', href: '/warranty' },
+    { name: 'Materials', href: '/materials' },
+    { name: 'Schedule', href: '/schedule' },
   ];
 
   return (

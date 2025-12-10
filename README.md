@@ -442,6 +442,55 @@ WARRANTY_EXPIRY_NOTICE_DAYS=30            # Days before expiry to send notificat
 
 See **[Warranty System](docs/08-warranty-system.md)** for detailed documentation.
 
+## 📦 Materials & Scheduling
+
+Phase 2 Sprint 4 introduced predictive scheduling capabilities with material ETA tracking and risk-based scheduling analysis.
+
+**Features**:
+
+- ✅ Material order tracking with ETA computation (ON_TRACK, AT_RISK, LATE)
+- ✅ Scheduling risk analysis combining material delays, job risk, and subcontractor performance
+- ✅ Real-time dashboard showing delivery delays and scheduling conflicts
+- ✅ Automated risk level computation (LOW, MEDIUM, HIGH) for all active jobs
+- ✅ Summary statistics for material orders and scheduling risks
+
+**API Endpoints**:
+
+```
+POST   /api/v1/material-orders/jobs/:jobId             # Create material order
+PATCH  /api/v1/material-orders/:id                     # Update material order
+GET    /api/v1/material-orders                         # List orders (with filters)
+GET    /api/v1/material-orders/jobs/:jobId             # Get orders for job
+GET    /api/v1/material-orders/summary                 # Get material summary
+GET    /api/v1/scheduling/overview                     # Get scheduling risks for all jobs
+GET    /api/v1/scheduling/jobs/:jobId                  # Get scheduling risk for job
+```
+
+**Dashboard Routes**:
+
+- `/materials` - Materials overview with order status, ETA tracking, and supplier filters
+- `/schedule` - Scheduling overview with risk analysis and multi-factor alerts
+
+**Material Order Status**: PENDING | ORDERED | SHIPPED | DELIVERED | DELAYED | CANCELLED
+
+**ETA Status Logic**:
+- ON_TRACK: Order delivered OR delivery >3 days away
+- AT_RISK: Delivery within 3 days OR no delivery date set
+- LATE: Expected delivery passed and not delivered
+
+**Scheduling Risk Factors**:
+1. Material delivery delays (etaStatus LATE → HIGH risk, AT_RISK → MEDIUM risk)
+2. Job risk levels from Risk Dashboard (HIGH → HIGH risk, MEDIUM → MEDIUM risk)
+3. Subcontractor performance (RED → HIGH risk, YELLOW → MEDIUM risk)
+
+**Configuration**:
+
+```env
+ETA_AT_RISK_THRESHOLD_DAYS=3               # Days threshold for at-risk status
+```
+
+See **[Material & Scheduling System](docs/09-material-scheduling-system.md)** for detailed documentation.
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.
@@ -535,6 +584,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Subcontractor Management](docs/06-subcontractor-system.md)** - Compliance & performance tracking
 - **[Safety & Incident Reporting](docs/07-safety-system.md)** - Safety management & OSHA compliance
 - **[Warranty System](docs/08-warranty-system.md)** - Warranty management & claim tracking
+- **[Material & Scheduling System](docs/09-material-scheduling-system.md)** - Material ETA tracking & predictive scheduling
 
 ## 🎯 Development Roadmap
 
@@ -555,8 +605,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - ✅ Subcontractor Management v1 (Sprint 1: directory, compliance tracking, performance scoring, job assignment guards, JobNimbus integration)
 - ✅ Safety & Incident Reporting v1 (Sprint 2: incident tracking, safety checklists, OSHA summaries, risk/subcontractor integration, JobNimbus notifications)
 - ✅ Warranty Management v1 (Sprint 3: activation, expiry tracking, claim management, customer portal integration, internal dashboard)
-- Material ETA tracking
-- AI-powered photo QC
+- ✅ Material & Scheduling v1 (Sprint 4: material ETA tracking, predictive scheduling, risk computation, internal dashboard)
+- AI-powered photo QC (Sprint 5)
 
 ### Phase 3: Automation & Intelligence (Weeks 21-30)
 

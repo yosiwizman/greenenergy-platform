@@ -10,6 +10,7 @@ import { SubcontractorModule } from './modules/subcontractor/subcontractor.modul
 import { SafetyModule } from './modules/safety/safety.module';
 import { WarrantyModule } from './modules/warranty/warranty.module';
 import { MaterialModule } from './modules/material/material.module';
+import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
 import { EmbedModule } from './modules/embed/embed.module';
 import { HealthController } from './health.controller';
@@ -29,6 +30,7 @@ import { HealthController } from './health.controller';
     SafetyModule,
     WarrantyModule,
     MaterialModule,
+    SchedulingModule,
     CustomerPortalModule,
     EmbedModule,
   ],

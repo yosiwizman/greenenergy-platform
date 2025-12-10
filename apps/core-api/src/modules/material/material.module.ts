@@ -1,6 +1,12 @@
 import { Module } from '@nestjs/common';
+ import { ConfigModule } from '@nestjs/config';
+import { MaterialService } from './material.service';
+import { MaterialController } from './material.controller';
 
 @Module({
-  // TODO: Add controllers and services in Phase 2 Sprint 4
+  imports: [ConfigModule],
+  controllers: [MaterialController],
+  providers: [MaterialService],
+  exports: [MaterialService],
 })
 export class MaterialModule {}

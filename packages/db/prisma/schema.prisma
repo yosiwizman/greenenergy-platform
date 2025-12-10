@@ -382,21 +382,25 @@ model WarrantyClaim {
 model MaterialOrder {
   id                   String    @id @default(cuid())
   jobId                String
-  supplier             String
-  orderNumber          String
-  orderDate            DateTime
-  expectedDeliveryDate DateTime
+  supplierName         String
+  orderNumber          String?
+  materialName         String
+  quantity             Float?
+  unit                 String?
+  status               String    // PENDING, ORDERED, SHIPPED, DELIVERED, DELAYED, CANCELLED
+  orderedAt            DateTime?
+  expectedDeliveryDate DateTime?
   actualDeliveryDate   DateTime?
-  etaStatus            String    @default("ORDERED")
-  items                String    @db.Text
-  totalCost            Float?
+  trackingUrl          String?
+  notes                String?   @db.Text
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
   job                  Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
-  @@index([etaStatus])
+  @@index([status])
+  @@index([expectedDeliveryDate])
   @@map("material_orders")
 }
 
