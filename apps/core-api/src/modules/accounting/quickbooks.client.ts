@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { QuickbooksAuthService } from './quickbooks-auth.service';
 
 /**
  * Minimal QuickBooks Invoice structure
@@ -22,9 +23,10 @@ export interface QuickbooksInvoice {
 }
 
 /**
- * QuickBooks Online API Client (v1 - read-only)
+ * QuickBooks Online API Client (v1.1 - read-only with OAuth2)
  * 
- * For v1, we assume:
+ * For v1.1, we use QuickbooksAuthService for token management:
+ * - Automatic token refresh via OAuth2
  * - Job's jobNimbusId maps to QuickBooks Invoice.DocNumber
  * - If multiple invoices match, we pick the latest by TxnDate
  * - Network calls are disabled if QB_ENABLED is false
@@ -33,16 +35,15 @@ export interface QuickbooksInvoice {
 export class QuickbooksClient {
   private readonly logger = new Logger(QuickbooksClient.name);
   private readonly httpClient: AxiosInstance;
-  private readonly enabled: boolean;
   private readonly baseUrl: string;
   private readonly companyId: string;
-  private readonly accessToken: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.enabled = this.configService.get<string>('QB_ENABLED', 'false') === 'true';
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly authService: QuickbooksAuthService,
+  ) {
     this.baseUrl = this.configService.get<string>('QB_BASE_URL', 'https://quickbooks.api.intuit.com');
     this.companyId = this.configService.get<string>('QB_COMPANY_ID', '');
-    this.accessToken = this.configService.get<string>('QB_ACCESS_TOKEN', '');
 
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
@@ -53,10 +54,10 @@ export class QuickbooksClient {
       },
     });
 
-    if (!this.enabled) {
-      this.logger.warn('QuickBooks integration is DISABLED (QB_ENABLED=false)');
-    } else if (!this.companyId || !this.accessToken) {
-      this.logger.warn('QuickBooks credentials incomplete (QB_COMPANY_ID or QB_ACCESS_TOKEN missing)');
+    if (!this.authService.isEnabled()) {
+      this.logger.warn('QuickBooks integration is DISABLED');
+    } else if (!this.companyId) {
+      this.logger.warn('QuickBooks credentials incomplete (QB_COMPANY_ID missing)');
     } else {
       this.logger.log('QuickBooks client initialized');
     }
@@ -67,13 +68,13 @@ export class QuickbooksClient {
    * Returns null if disabled, not found, or on error
    */
   async fetchInvoiceByJobNumber(jobNumber: string): Promise<QuickbooksInvoice | null> {
-    if (!this.enabled) {
+    if (!this.authService.isEnabled()) {
       this.logger.debug(`QuickBooks disabled, skipping invoice fetch for job: ${jobNumber}`);
       return null;
     }
 
-    if (!this.companyId || !this.accessToken) {
-      this.logger.warn('QuickBooks credentials missing, cannot fetch invoice');
+    if (!this.companyId) {
+      this.logger.warn('QuickBooks credentials missing (QB_COMPANY_ID), cannot fetch invoice');
       return null;
     }
 
@@ -85,6 +86,9 @@ export class QuickbooksClient {
     try {
       this.logger.log(`Fetching QuickBooks invoice for job number: ${jobNumber}`);
 
+      // Get access token from auth service
+      const accessToken = await this.authService.getAccessToken();
+
       // Query invoices by DocNumber
       // QuickBooks API: GET /v3/company/:companyId/query?query=...
       const query = `SELECT * FROM Invoice WHERE DocNumber = '${this.escapeQuickbooksQuery(jobNumber)}'`;
@@ -93,7 +97,7 @@ export class QuickbooksClient {
       const response = await this.httpClient.get(url, {
         params: { query },
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
       });
 
@@ -139,6 +143,6 @@ export class QuickbooksClient {
    * Check if QuickBooks integration is enabled
    */
   isEnabled(): boolean {
-    return this.enabled;
+    return this.authService.isEnabled();
   }
 }

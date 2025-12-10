@@ -590,16 +590,18 @@ POST  /api/v1/profit/recalculate-all              # Recalculate all job snapshot
 
 ## 💼 Accounting & QuickBooks Integration
 
-Phase 3 Sprint 1 introduced QuickBooks Online integration to sync real financial data into the Profit Dashboard, replacing placeholder contract amounts with actual invoice data.
+Phase 3 Sprint 1 & 2 delivered QuickBooks Online integration with OAuth2 automatic token refresh and scheduled sync capabilities.
 
 **Features**:
 
 - ✅ QuickBooks Online API integration (read-only)
+- ✅ OAuth2 automatic token refresh (Sprint 2)
 - ✅ Contract amount sync from QB invoices
+- ✅ Scheduled daily sync at 2 AM (Sprint 2)
 - ✅ Accounting source tracking (PLACEHOLDER, QUICKBOOKS, MANUAL)
 - ✅ Sync timestamp tracking
 - ✅ Error-resilient batch sync
-- ✅ UI indicators showing data source with sync buttons
+- ✅ UI sync controls: "Sync All" and per-job buttons (Sprint 2)
 
 **API Endpoints**:
 
@@ -614,7 +616,15 @@ POST  /api/v1/accounting/sync-all            # Sync all active jobs from QuickBo
 QB_ENABLED=true                                # Enable/disable QuickBooks sync
 QB_BASE_URL=https://quickbooks.api.intuit.com  # QuickBooks API base URL
 QB_COMPANY_ID=your_company_id                  # QuickBooks Company ID (Realm ID)
-QB_ACCESS_TOKEN=your_access_token              # Current access token (v1: manual refresh)
+
+# OAuth2 (Sprint 2)
+QB_CLIENT_ID=your_client_id                    # OAuth2 Client ID
+QB_CLIENT_SECRET=your_client_secret            # OAuth2 Client Secret
+QB_REFRESH_TOKEN=your_refresh_token            # Refresh token (from initial OAuth)
+QB_ACCESS_TOKEN=your_access_token              # Fallback token (optional)
+
+# Scheduled Sync (Sprint 2)
+QB_SYNC_ENABLED=true                           # Enable automatic daily sync at 2 AM
 ```
 
 **QuickBooks Mapping**:
@@ -622,21 +632,35 @@ QB_ACCESS_TOKEN=your_access_token              # Current access token (v1: manua
 - `Invoice.TotalAmt` → `JobFinancialSnapshot.contractAmount`
 - Multiple invoices: Uses latest by TxnDate
 
+**OAuth2 Token Management** (Sprint 2):
+- Automatic token refresh using refresh token
+- Token caching with 5-minute safety margin
+- Fallback to QB_ACCESS_TOKEN if OAuth2 not configured
+- No manual token management after initial setup
+
+**Scheduled Sync** (Sprint 2):
+- Built-in daily sync at 2 AM via `@Cron` scheduler
+- Enabled with `QB_SYNC_ENABLED=true`
+- Processes all active jobs automatically
+- Error-resilient batch processing
+
 **Service Behavior**:
-- ProfitabilityService now respects QuickBooks data
+- ProfitabilityService respects QuickBooks data
 - If `accountingSource = 'QUICKBOOKS'`, `contractAmount` is NOT overwritten
 - Placeholder calculation only used when no QB data exists
 
-**Dashboard Enhancements**:
+**Dashboard Enhancements** (Sprint 1 & 2):
 - Accounting Source column with color-coded badges (Blue=QuickBooks, Gray=Placeholder, Purple=Manual)
 - Sync timestamp display
+- **"Sync All from QuickBooks" button** for batch sync (Sprint 2)
 - Per-job "Sync QB" button for manual sync
+- Loading states and success/error feedback
 
 **Future Enhancements**:
-- OAuth2 automatic token refresh
 - Cost breakdown sync (labor, materials, permits)
 - Multi-invoice support
 - Webhook integration for real-time updates
+- Change order tracking
 
 See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation.
 

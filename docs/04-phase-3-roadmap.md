@@ -31,7 +31,43 @@
 - Webhook integration for real-time updates
 - Xero and other accounting platforms
 
-## Sprint 2: Intelligent Dispatching
+## Sprint 2: QuickBooks Reliability & Automation ✅ COMPLETE
+
+**Status**: ✅ Delivered
+
+**Deliverables**:
+- ✅ OAuth2 automatic token refresh (QuickbooksAuthService)
+- ✅ Token caching with expiry management
+- ✅ Scheduled daily sync at 2 AM (@Cron)
+- ✅ QB_SYNC_ENABLED feature flag
+- ✅ "Sync All from QuickBooks" button in dashboard
+- ✅ Per-job sync button (already in Sprint 1, verified)
+- ✅ Comprehensive test coverage (10+ new test scenarios)
+- ✅ Updated documentation
+
+**Technical Details**:
+- `QuickbooksAuthService.getAccessToken()` - automatic token refresh
+- `AccountingTasks.handleDailyQuickbooksSync()` - scheduled sync job
+- Token cache with 5-minute safety margin before expiry
+- Fallback to `QB_ACCESS_TOKEN` if OAuth2 not configured
+- Dashboard UI enhancements with loading states
+
+**Environment Variables Added**:
+```bash
+QB_CLIENT_ID           # OAuth2 client ID
+QB_CLIENT_SECRET       # OAuth2 client secret
+QB_REFRESH_TOKEN       # Refresh token from initial OAuth flow
+QB_TOKEN_URL           # OAuth token endpoint
+QB_SYNC_ENABLED        # Enable/disable scheduled sync
+```
+
+**Benefits**:
+- No manual token management after initial setup
+- Automatic nightly sync keeps data fresh
+- One-click batch sync from UI
+- Improved reliability and user experience
+
+## Sprint 3: Intelligent Dispatching
 
 - AI-driven crew scheduling
 - Route optimization

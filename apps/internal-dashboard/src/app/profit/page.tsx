@@ -19,6 +19,7 @@ export default function ProfitPage() {
   const [profitabilityFilter, setProfitabilityFilter] = useState<string>('ALL');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
   const [syncingJobId, setSyncingJobId] = useState<string | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -126,6 +127,31 @@ export default function ProfitPage() {
     }
   };
 
+  const handleSyncAll = async () => {
+    try {
+      setSyncingAll(true);
+      const response = await fetch('/api/v1/accounting/sync-all', {
+        method: 'POST',
+        headers: {
+          'x-internal-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync all jobs from QuickBooks');
+      }
+
+      // Refresh data after sync
+      await fetchData();
+      alert('QuickBooks sync completed successfully!');
+    } catch (err) {
+      console.error('Failed to sync all jobs:', err);
+      alert('Failed to sync all jobs from QuickBooks. Check console for details.');
+    } finally {
+      setSyncingAll(false);
+    }
+  };
+
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount === null || amount === undefined) return '-';
     return new Intl.NumberFormat('en-US', {
@@ -171,12 +197,21 @@ export default function ProfitPage() {
             Job-level profitability and portfolio performance
           </p>
         </div>
-        <button
-          onClick={fetchData}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSyncAll}
+            disabled={syncingAll}
+            className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {syncingAll ? 'Syncing All...' : 'Sync All from QuickBooks'}
+          </button>
+          <button
+            onClick={fetchData}
+            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}

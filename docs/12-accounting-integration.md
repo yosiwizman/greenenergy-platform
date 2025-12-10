@@ -1,18 +1,21 @@
-# Accounting & QuickBooks Integration (Phase 3 Sprint 1)
+# Accounting & QuickBooks Integration (Phase 3 Sprint 1 & 2)
 
 ## Overview
 
-The Accounting Integration module connects the Green Energy Platform with QuickBooks Online to sync **real financial data** into the Profit Dashboard. This v1 implementation is read-only and focuses on syncing **contract amounts** from QuickBooks invoices to replace placeholder calculations.
+The Accounting Integration module connects the Green Energy Platform with QuickBooks Online to sync **real financial data** into the Profit Dashboard. The integration is read-only and focuses on syncing **contract amounts** from QuickBooks invoices to replace placeholder calculations.
 
 **Key Features:**
 
 - ✅ QuickBooks Online API integration (read-only)
+- ✅ OAuth2 automatic token refresh (Phase 3 Sprint 2)
 - ✅ Automated sync of contract amounts from QB invoices
+- ✅ Scheduled daily sync (configurable)
 - ✅ Accounting source tracking (PLACEHOLDER, QUICKBOOKS, MANUAL)
 - ✅ Sync timestamp tracking
 - ✅ Configurable via environment variables
 - ✅ Error-resilient batch sync
 - ✅ UI indicators showing data source
+- ✅ Manual sync controls in dashboard
 
 ## Architecture
 
@@ -58,16 +61,31 @@ Add to `.env` or `.env.local`:
 QB_ENABLED=true                          # Enable/disable QuickBooks sync
 QB_BASE_URL=https://quickbooks.api.intuit.com  # QuickBooks API base URL
 QB_COMPANY_ID=your_company_id            # QuickBooks Company ID (Realm ID)
-QB_CLIENT_ID=your_client_id              # OAuth2 Client ID (future OAuth)
-QB_CLIENT_SECRET=your_client_secret      # OAuth2 Client Secret (future OAuth)
-QB_ACCESS_TOKEN=your_access_token        # Current access token (manual refresh for v1)
-QB_REFRESH_TOKEN=your_refresh_token      # Refresh token (future OAuth)
+
+# OAuth2 Credentials (Phase 3 Sprint 2)
+QB_CLIENT_ID=your_client_id              # OAuth2 Client ID
+QB_CLIENT_SECRET=your_client_secret      # OAuth2 Client Secret
+QB_REFRESH_TOKEN=your_refresh_token      # Refresh token (from initial OAuth flow)
+QB_TOKEN_URL=https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer  # OAuth token endpoint
+
+# Fallback Token (optional)
+QB_ACCESS_TOKEN=your_access_token        # Fallback access token (if OAuth2 not configured)
+
+# Scheduled Sync (Phase 3 Sprint 2)
+QB_SYNC_ENABLED=true                     # Enable automatic daily sync at 2 AM
 ```
 
-**For v1:**
-- Full OAuth2 flow is not implemented
-- `QB_ACCESS_TOKEN` must be refreshed manually when expired (typically 1 hour)
-- Future enhancement: Automatic token refresh using `QB_REFRESH_TOKEN`
+**OAuth2 Token Management (Phase 3 Sprint 2):**
+- ✅ Automatic token refresh using `QB_REFRESH_TOKEN`
+- ✅ Token caching in memory (expires 5 minutes before actual expiry)
+- ✅ Fallback to `QB_ACCESS_TOKEN` if OAuth2 credentials not configured
+- ✅ Graceful error handling with detailed logging
+
+**Initial Setup:**
+1. Obtain initial `QB_REFRESH_TOKEN` via QuickBooks OAuth2 flow (manual, one-time)
+2. Configure OAuth2 credentials in environment
+3. Application automatically refreshes access tokens as needed
+4. No manual token management required after initial setup
 
 ### Disabling QuickBooks
 
@@ -180,13 +198,24 @@ The `/profit` dashboard now displays:
 
 ### Regular Sync
 
-**Option A: Scheduled Sync (Recommended)**
-- Add cron job or scheduled task to call `/api/v1/accounting/sync-all`
-- Frequency: Daily or weekly depending on data freshness needs
+**Option A: Automatic Scheduled Sync (Recommended) - Phase 3 Sprint 2**
+- Built-in daily sync at 2 AM
+- Enable with `QB_SYNC_ENABLED=true` in environment
+- Runs automatically via NestJS `@Cron` scheduler
+- Processes all active jobs (excludes COMPLETE, CANCELLED, LOST)
+- Error-resilient: continues processing even if individual jobs fail
+- Logs success/error counts at completion
 
-**Option B: On-Demand Sync**
-- Use UI "Sync QB" button for individual jobs
-- Use "Refresh" button on dashboard (does NOT trigger sync)
+**Option B: Manual Sync from Dashboard**
+- **Sync All Button**: Triggers batch sync for all active jobs
+- **Per-Job Sync Button**: Syncs individual job on demand
+- Both buttons show loading states while syncing
+- Auto-refreshes data after sync completes
+
+**Option C: API-Triggered Sync**
+- Call `POST /api/v1/accounting/sync-all` via external scheduler/cron
+- Call `POST /api/v1/accounting/jobs/:jobId/sync` for individual jobs
+- Requires `x-internal-api-key` header
 
 ### Monitoring
 
