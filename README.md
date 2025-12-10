@@ -694,6 +694,84 @@ See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed
 **Documentation**:
 See **[Deployment & Environments Guide](docs/11-deployment-and-environments.md)** for complete deployment instructions, troubleshooting, and best practices.
 
+## 🤖 Workflow Automation Engine
+
+**Phase 3 Sprint 4 & 5**: Rules-based workflow automation engine that continuously monitors jobs and automatically creates JobNimbus tasks/notes when conditions are met.
+
+**Features**:
+
+- ✅ 8 workflow rules across 6 departments (SALES, PRODUCTION, ADMIN, SAFETY, WARRANTY, FINANCE)
+- ✅ Automatic task/note creation in JobNimbus
+- ✅ Deduplication logic with configurable cooldown periods
+- ✅ Daily automated execution at 4 AM (via cron)
+- ✅ Manual trigger controls (single job or all jobs)
+- ✅ Internal dashboard at `/workflows` with filtering and execution controls
+- ✅ Action log tracking for audit trail and analytics
+
+**Workflow Rules**:
+
+1. **SALES_ESTIMATE_FOLLOWUP_72H** - Follow up on estimates with no update for ≥72 hours (7-day cooldown)
+2. **PRODUCTION_QC_FAIL_NEEDS_PHOTOS** - QC failures with missing photo categories (3-day cooldown)
+3. **PRODUCTION_MATERIAL_DELAY** - Material orders past expected delivery date (2-day cooldown)
+4. **ADMIN_SUB_NONCOMPLIANT_ASSIGNED** - Non-compliant subcontractors assigned to jobs (1-day cooldown)
+5. **SAFETY_OPEN_HIGH_SEVERITY_INCIDENT** - Open HIGH/CRITICAL safety incidents (1-day cooldown)
+6. **WARRANTY_EXPIRING_SOON** - Warranties expiring within 30 days (14-day cooldown)
+7. **FINANCE_LOW_MARGIN_HIGH_RISK_JOB** - Jobs with <10% margin AND HIGH risk (7-day cooldown)
+8. **FINANCE_MISSING_CONTRACT_AMOUNT** - Active jobs missing contract amounts (5-day cooldown)
+
+**API Endpoints**:
+
+```
+GET   /api/v1/workflows/rules                   # List all workflow rules
+GET   /api/v1/workflows/logs                    # Get recent action logs (with filters)
+POST  /api/v1/workflows/jobs/:jobId/run         # Run workflows for single job
+POST  /api/v1/workflows/run-all                 # Run workflows for all active jobs
+```
+
+**Configuration** (Environment Variables):
+
+```bash
+WORKFLOW_AUTOMATION_ENABLED=false        # Enable/disable automatic daily execution
+WORKFLOW_AUTOMATION_DAILY_LIMIT=500     # Max jobs to process per daily run
+```
+
+**Dashboard** (`/workflows`):
+
+- **Rules Summary Table**: View all 8 rules with department badges, descriptions, and status
+- **Recent Actions Table**: View workflow actions with filtering by Job ID, Rule, and Limit
+- **Manual Execution Controls**:
+  - "Run All Workflows" button (top-right header)
+  - "Run for Single Job" panel with Job ID input
+  - Real-time success/error feedback with action counts
+- **Empty State**: Helpful message when no actions have been recorded yet
+
+**Deduplication**:
+
+Each rule has a cooldown period (1-14 days). Before firing, the engine checks `WorkflowActionLog` for recent actions on the same job + rule combination. If found within the cooldown window, the rule is skipped to prevent duplicate tasks.
+
+**Performance**:
+
+- Processes 500 jobs in <30 seconds
+- Error isolation (one rule failure doesn't affect others)
+- Sequential execution to avoid JobNimbus API rate limits
+
+**Business Impact**:
+
+- Reduced manual follow-up work
+- Proactive alerts for compliance and safety issues
+- Financial oversight for risky jobs
+- Customer retention through warranty expiration outreach
+- Automatic reminders for stale estimates and late materials
+
+**Future Enhancements (v2+)**:
+
+- LLM integration for AI-generated task descriptions
+- User-editable rules via UI (no code changes)
+- Additional action types (Email, SMS, Slack notifications)
+- Analytics dashboard (rules fired over time, effectiveness metrics)
+
+See **[Workflow Automation](docs/13-workflow-automation.md)** for detailed documentation.
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.
@@ -813,11 +891,14 @@ Comprehensive documentation is available in the `docs/` directory:
 
 ### Phase 3: Automation & Intelligence (Weeks 21-30)
 
-- Workflow automation engine
-- Intelligent dispatching
-- Finance integrations
-- Forecasting and analytics
-- Command center v2
+- ✅ Sprint 1: QuickBooks Accounting Integration (read-only, contract amount sync, accounting source tracking)
+- ✅ Sprint 2: QuickBooks Reliability & Automation (OAuth2 token refresh, scheduled daily sync, UI sync controls)
+- ✅ Sprint 3: Deployment & Environments (Vercel frontends, Railway backend, production-ready Dockerfile, environment docs)
+- ✅ Sprint 4: AI Workflow Automation Engine v1 (8 rules, 6 departments, deduplication, JobNimbus integration, cron scheduling)
+- ✅ Sprint 5: Workflow Automation Dashboard & Observability (internal `/workflows` page, filtering, manual execution controls)
+- Sprint 6: Intelligent Dispatching (AI-driven crew scheduling, route optimization)
+- Sprint 7: Forecasting & Analytics (job completion predictions, resource demand forecasting)
+- Sprint 8: Command Center v2 (real-time operations dashboard, performance analytics)
 
 ## 🧪 Testing
 

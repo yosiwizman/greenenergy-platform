@@ -256,13 +256,65 @@ Each rule has a `cooldownDays` parameter. Before firing, the engine checks `Work
 
 **Location**: `/workflows` (internal-dashboard)
 
-**Features** (v1 implementation pending):
-- Rule summary table (name, department, description, enabled)
-- Recent actions table (time, job, rule, action type)
-- Manual "Run All Workflows" button
-- Filters by job, rule, date range
+**Status**: ✅ COMPLETE (Phase 3 Sprint 5)
 
-**Note**: Dashboard UI is a TODO for future sprint. API endpoints are fully functional.
+### Features
+
+#### 1. Workflow Rules Summary
+- Table showing all 8 rules with:
+  - Department badge (color-coded)
+  - Rule name
+  - Description
+  - Rule key (monospace)
+  - Enabled/Disabled status
+
+#### 2. Recent Actions Table
+- Displays recent workflow actions with:
+  - Timestamp (formatted)
+  - Job ID (clickable link to risk view)
+  - Rule key
+  - Department badge
+  - Action type badge (Task/Note/Flag)
+  - Metadata snippet
+- Empty state message when no actions recorded
+
+#### 3. Filtering
+- **Job ID**: Text input to filter logs by specific job
+- **Rule**: Dropdown to filter by rule key
+- **Limit**: Select 25/50/100 results
+- Filters update logs automatically
+
+#### 4. Manual Execution Controls
+- **Run All Workflows** button (top-right header)
+  - Triggers workflow execution for all active jobs
+  - Shows loading state
+  - Displays success/error message with job/action counts
+  - Refreshes logs after completion
+  
+- **Run for Single Job** panel
+  - Input field for Job ID
+  - "Run for Job" button
+  - Shows result message with action count
+  - Refreshes logs after completion
+
+### Usage
+
+1. Navigate to `/workflows` in internal dashboard
+2. View all workflow rules and their current status
+3. Review recent workflow actions in the logs table
+4. Apply filters to find specific jobs or rule executions
+5. Manually trigger workflows:
+   - For all jobs: Click "Run All Workflows" button
+   - For single job: Enter Job ID and click "Run for Job"
+6. View results and refresh the page to see new actions
+
+### Technical Details
+
+- **Client-side**: React with Next.js App Router
+- **API Integration**: Calls core-api workflow endpoints with `NEXT_PUBLIC_INTERNAL_API_KEY`
+- **State Management**: React hooks (useState, useEffect)
+- **Styling**: Tailwind CSS with `@greenenergy/ui` components
+- **Type Safety**: Full TypeScript with `@greenenergy/shared-types`
 
 ---
 

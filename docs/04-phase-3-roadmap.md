@@ -120,28 +120,121 @@ NEXT_PUBLIC_API_BASE_URL, NEXT_PUBLIC_INTERNAL_API_KEY
 - Secure environment variable management
 - Easy rollback and update procedures
 
-## Sprint 4: Intelligent Dispatching
+## Sprint 4: AI Workflow Automation Engine v1 ✅ COMPLETE
+
+**Status**: ✅ Delivered
+
+**Deliverables**:
+- ✅ WorkflowActionLog Prisma model with composite index
+- ✅ 8 workflow rules across 6 departments (SALES, PRODUCTION, ADMIN, SAFETY, WARRANTY, FINANCE)
+- ✅ Deduplication logic with configurable cooldown periods
+- ✅ JobNimbus task/note creation integration
+- ✅ Daily cron job at 4 AM (WORKFLOW_AUTOMATION_ENABLED)
+- ✅ 4 internal API endpoints (rules, logs, run-job, run-all)
+- ✅ Comprehensive test coverage (9 new tests, 119 total passing)
+- ✅ Full documentation (docs/13-workflow-automation.md)
+
+**Workflow Rules Implemented**:
+1. **SALES_ESTIMATE_FOLLOWUP_72H** - Follow up on stale estimates (7-day cooldown)
+2. **PRODUCTION_QC_FAIL_NEEDS_PHOTOS** - QC failures missing photos (3-day cooldown)
+3. **PRODUCTION_MATERIAL_DELAY** - Late material orders (2-day cooldown)
+4. **ADMIN_SUB_NONCOMPLIANT_ASSIGNED** - Non-compliant subcontractors (1-day cooldown)
+5. **SAFETY_OPEN_HIGH_SEVERITY_INCIDENT** - High/critical safety incidents (1-day cooldown)
+6. **WARRANTY_EXPIRING_SOON** - Warranties expiring within 30 days (14-day cooldown)
+7. **FINANCE_LOW_MARGIN_HIGH_RISK_JOB** - Low margin + high risk jobs (7-day cooldown)
+8. **FINANCE_MISSING_CONTRACT_AMOUNT** - Active jobs missing contract amounts (5-day cooldown)
+
+**Technical Details**:
+- Rules-based system (no LLM in v1) for deterministic, testable automation
+- Processes 500 jobs in <30 seconds
+- Error isolation (one rule failure doesn't affect others)
+- Sequential execution to avoid JobNimbus API rate limits
+- Extensible architecture for future LLM integration
+
+**API Endpoints**:
+- `GET /api/v1/workflows/rules` - List all workflow rules
+- `GET /api/v1/workflows/logs` - Get recent action logs with filters
+- `POST /api/v1/workflows/jobs/:jobId/run` - Run workflows for single job
+- `POST /api/v1/workflows/run-all` - Run workflows for all active jobs
+
+**Benefits**:
+- Reduced manual follow-up work
+- Proactive alerts for non-compliant subcontractors and safety incidents
+- Financial oversight for low-margin high-risk jobs
+- Warranty expiration outreach for customer retention
+- Automatic reminders for stale estimates and late materials
+
+## Sprint 5: Workflow Automation Dashboard & Observability ✅ COMPLETE
+
+**Status**: ✅ Delivered
+
+**Deliverables**:
+- ✅ `/workflows` page in internal-dashboard (Next.js App Router)
+- ✅ Workflow Rules Summary table (department badges, descriptions, keys, status)
+- ✅ Recent Actions table with filtering (Job ID, Rule, Limit)
+- ✅ Manual execution controls ("Run All Workflows" button, "Run for Job" input)
+- ✅ Real-time result feedback (success/error messages with action counts)
+- ✅ Integration with core-api workflow endpoints
+- ✅ Updated documentation (docs/13-workflow-automation.md)
+
+**Dashboard Features**:
+
+1. **Rules Summary**:
+   - Department badge (color-coded: SALES, PRODUCTION, ADMIN, SAFETY, WARRANTY, FINANCE)
+   - Rule name and description
+   - Rule key (monospace)
+   - Enabled/Disabled status
+
+2. **Recent Actions Table**:
+   - Timestamp (formatted)
+   - Job ID (clickable link to risk view)
+   - Rule key
+   - Department badge
+   - Action type badge (Task/Note/Flag)
+   - Metadata snippet
+   - Empty state message when no actions recorded
+
+3. **Filtering**:
+   - Job ID text input
+   - Rule dropdown (all rules + "All Rules")
+   - Limit selector (25/50/100)
+   - Auto-refresh on filter change
+
+4. **Manual Execution**:
+   - "Run All Workflows" button (header)
+   - "Run for Job" panel with Job ID input
+   - Loading states and result feedback
+   - Auto-refresh logs after execution
+
+**Technical Details**:
+- Client-side React with Next.js App Router
+- API integration via `NEXT_PUBLIC_INTERNAL_API_KEY`
+- State management with React hooks (useState, useEffect)
+- Tailwind CSS with `@greenenergy/ui` components
+- Full TypeScript with `@greenenergy/shared-types`
+
+**Benefits**:
+- Operations visibility into workflow automation
+- Ability to manually trigger workflows for testing/debugging
+- Filter logs to investigate specific jobs or rules
+- Real-time feedback on workflow execution results
+- Foundation for future analytics dashboard
+
+## Sprint 6: Intelligent Dispatching (Future)
 
 - AI-driven crew scheduling
 - Route optimization
 - Skills-based matching
 - Real-time dispatch adjustments
 
-## Sprint 5: Finance Integrations (Weeks 25-26)
-
-- QuickBooks/Xero integration
-- Invoice generation and tracking
-- Payment status sync
-- Financial reporting dashboard
-
-## Sprint 4: Forecasting & Analytics (Weeks 27-28)
+## Sprint 7: Forecasting & Analytics (Future)
 
 - Job completion date predictions
 - Resource demand forecasting
 - Revenue projections
 - Trend analysis and insights
 
-## Sprint 5: Command Center v2 (Weeks 29-30)
+## Sprint 8: Command Center v2 (Future)
 
 - Real-time operations dashboard
 - Multi-team coordination
