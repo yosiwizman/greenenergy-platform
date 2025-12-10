@@ -147,7 +147,7 @@ export class SafetyService {
       orderBy: { occurredAt: 'desc' },
     });
 
-    return incidents.map((incident) => this.mapIncidentToDTO(incident));
+    return incidents.map((incident: any) => this.mapIncidentToDTO(incident));
   }
 
   /**
@@ -367,7 +367,7 @@ export class SafetyService {
       orderBy: { date: 'desc' },
     });
 
-    return checklists.map((checklist) => ({
+    return checklists.map((checklist: { id: string; jobId: string | null; subcontractorId: string | null; type: string; date: Date; completedBy: string | null; notes: string | null; itemsJson: any }) => ({
       id: checklist.id,
       jobId: checklist.jobId || undefined,
       subcontractorId: checklist.subcontractorId || undefined,

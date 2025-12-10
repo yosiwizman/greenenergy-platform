@@ -181,9 +181,9 @@ export class PhotoService {
     });
 
     const grouped = {
-      BEFORE: photos.filter((p) => p.category === 'BEFORE'),
-      DURING: photos.filter((p) => p.category === 'DURING'),
-      AFTER: photos.filter((p) => p.category === 'AFTER'),
+      BEFORE: photos.filter((p: { category: string | null }) => p.category === 'BEFORE'),
+      DURING: photos.filter((p: { category: string | null }) => p.category === 'DURING'),
+      AFTER: photos.filter((p: { category: string | null }) => p.category === 'AFTER'),
     };
 
     return {

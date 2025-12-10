@@ -181,7 +181,7 @@ export class CustomerPortalService {
     const statusTimeline = this.buildStatusTimeline(job.status);
 
     // Map photos
-    const photos: PortalJobPhoto[] = job.photos.map((photo) => ({
+    const photos: PortalJobPhoto[] = job.photos.map((photo: { id: string; category: string | null; fileUrl: string; fileName: string; uploadedAt: Date }) => ({
       id: photo.id,
       category: this.mapPhotoCategory(photo.category),
       url: photo.fileUrl,

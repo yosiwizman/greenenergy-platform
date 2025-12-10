@@ -149,9 +149,9 @@ export class RiskService {
 
     if (openIncidents.length > 0) {
       // Count by severity
-      const criticalCount = openIncidents.filter((inc) => inc.severity === 'CRITICAL').length;
-      const highCount = openIncidents.filter((inc) => inc.severity === 'HIGH').length;
-      const mediumCount = openIncidents.filter((inc) => inc.severity === 'MEDIUM').length;
+      const criticalCount = openIncidents.filter((inc: { severity: string }) => inc.severity === 'CRITICAL').length;
+      const highCount = openIncidents.filter((inc: { severity: string }) => inc.severity === 'HIGH').length;
+      const mediumCount = openIncidents.filter((inc: { severity: string }) => inc.severity === 'MEDIUM').length;
 
       if (criticalCount > 0 || highCount > 0) {
         reasons.push({
@@ -277,7 +277,7 @@ export class RiskService {
     return {
       jobId: snapshot.jobId,
       jobNumber: snapshot.job.jobNimbusId || snapshot.job.id.substring(0, 8).toUpperCase(),
-      customerName: snapshot.job.customerName,
+      customerName: snapshot.job.customerName || undefined,
       currentStatus: snapshot.job.status,
       riskLevel: snapshot.riskLevel as RiskLevel,
       reasons,
@@ -310,13 +310,13 @@ export class RiskService {
       },
     });
 
-    return snapshots.map((snapshot) => {
+    return snapshots.map((snapshot: { jobId: string; job: { jobNimbusId: string | null; id: string; customerName: string | null; status: string; updatedAt: Date }; riskLevel: string; reasonsJson: string; lastUpdatedAt: Date | null; riskComputedAt: Date }) => {
       const reasons: RiskReason[] = JSON.parse(snapshot.reasonsJson);
 
       return {
         jobId: snapshot.jobId,
         jobNumber: snapshot.job.jobNimbusId || snapshot.job.id.substring(0, 8).toUpperCase(),
-        customerName: snapshot.job.customerName,
+        customerName: snapshot.job.customerName || undefined,
         currentStatus: snapshot.job.status,
         riskLevel: snapshot.riskLevel as RiskLevel,
         reasons,

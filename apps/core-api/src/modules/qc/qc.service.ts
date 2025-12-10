@@ -247,10 +247,10 @@ export class QCService {
       },
     });
 
-    return jobs.map((job) => {
+    return jobs.map((job: { id: string; jobNimbusId: string | null; customerName: string | null; qcPhotoChecks: Array<{ status: string; checkedAt: Date }>; photos: Array<{ category: string | null }> }) => {
       const latestCheck = job.qcPhotoChecks[0];
       const photoCounts = job.photos.reduce(
-        (acc, p) => {
+        (acc: Record<PhotoCategory, number>, p: { category: string | null }) => {
           if (
             p.category &&
             (p.category === 'BEFORE' || p.category === 'DURING' || p.category === 'AFTER')

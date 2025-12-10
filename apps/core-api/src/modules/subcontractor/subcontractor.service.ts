@@ -60,7 +60,7 @@ export class SubcontractorService {
       orderBy: { name: 'asc' },
     });
 
-    return subcontractors.map((sub) => this.mapToDTO(sub));
+    return subcontractors.map((sub: any) => this.mapToDTO(sub));
   }
 
   /**
@@ -478,7 +478,7 @@ export class SubcontractorService {
       orderBy: [{ isPrimary: 'desc' }, { assignedAt: 'asc' }],
     });
 
-    return assignments.map((a) => ({
+    return assignments.map((a: { id: string; jobId: string; subcontractorId: string; subcontractor: { name: string }; role: string | null; assignedAt: Date; unassignedAt: Date | null; isPrimary: boolean }) => ({
       id: a.id,
       jobId: a.jobId,
       subcontractorId: a.subcontractorId,
@@ -512,7 +512,7 @@ export class SubcontractorService {
       select: { jobId: true },
     });
 
-    const jobIds = assignments.map((a) => a.jobId);
+    const jobIds = assignments.map((a: { jobId: string }) => a.jobId);
 
     // Count QC failures
     const qcFailures = await prisma.qCPhotoCheck.count({
