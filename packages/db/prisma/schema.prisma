@@ -469,10 +469,15 @@ model JobFinancialSnapshot {
   riskLevel      String?  // 'LOW' | 'MEDIUM' | 'HIGH'
   schedulingRisk String?  // 'LOW' | 'MEDIUM' | 'HIGH'
 
+  // Accounting metadata (Phase 3 Sprint 1)
+  accountingSource    String?   // 'PLACEHOLDER' | 'QUICKBOOKS' | 'MANUAL'
+  accountingLastSyncAt DateTime?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([riskLevel])
   @@index([marginPercent])
+  @@index([accountingSource])
   @@map("job_financial_snapshots")
 }

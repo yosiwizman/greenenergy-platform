@@ -15,6 +15,7 @@ import { CustomerPortalModule } from './modules/customer-portal/customer-portal.
 import { EmbedModule } from './modules/embed/embed.module';
 import { AiOpsModule } from './modules/ai-ops/ai-ops.module';
 import { ProfitabilityModule } from './modules/profitability/profitability.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -37,6 +38,7 @@ import { HealthController } from './health.controller';
     EmbedModule,
     AiOpsModule,
     ProfitabilityModule,
+    AccountingModule,
   ],
   controllers: [HealthController],
 })

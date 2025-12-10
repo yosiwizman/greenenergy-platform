@@ -798,6 +798,9 @@ export interface AiCustomerMessageDTO {
 // Profit & Executive Dashboard Types (Phase 2 Sprint 6)
 export type JobProfitabilityLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
+// Accounting Integration Types (Phase 3 Sprint 1)
+export type AccountingSource = 'PLACEHOLDER' | 'QUICKBOOKS' | 'MANUAL';
+
 export interface JobProfitabilityDTO {
   jobId: string;
   jobNumber?: string | null;
@@ -814,6 +817,10 @@ export interface JobProfitabilityDTO {
   profitabilityLevel: JobProfitabilityLevel;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   schedulingRisk?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+
+  // Accounting metadata (Phase 3 Sprint 1)
+  accountingSource?: AccountingSource | null;
+  accountingLastSyncAt?: string | null; // ISO string
 }
 
 export interface ProfitDashboardSummaryDTO {

@@ -142,6 +142,7 @@ export class ProfitabilityService {
 
   /**
    * Recalculate financial snapshot for a single job
+   * NOTE: If accountingSource is QUICKBOOKS, contractAmount is NOT overwritten
    */
   async recalculateJobFinancialSnapshot(jobId: string): Promise<JobProfitabilityDTO> {
     this.logger.log(`Recalculating financial snapshot for job: ${jobId}`);
@@ -149,6 +150,7 @@ export class ProfitabilityService {
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
+        financialSnapshot: true,
         riskSnapshot: {
           select: {
             riskLevel: true,
@@ -161,9 +163,23 @@ export class ProfitabilityService {
       throw new NotFoundException(`Job with ID ${jobId} not found`);
     }
 
-    // For v1, use systemSize as a placeholder for contract amount if available
-    // Real implementation would sync from JobNimbus or other source
-    const contractAmount = job.systemSize ? job.systemSize * 3.5 * 1000 : 10000; // placeholder: $3.50/W
+    // Check if existing snapshot has QuickBooks data
+    const hasQuickbooksData =
+      job.financialSnapshot?.accountingSource === 'QUICKBOOKS';
+
+    // Determine contractAmount:
+    // - If QuickBooks data exists, preserve it
+    // - Otherwise, use placeholder logic
+    let contractAmount: number;
+    if (hasQuickbooksData && job.financialSnapshot) {
+      contractAmount = job.financialSnapshot.contractAmount;
+      this.logger.debug(
+        `Preserving QuickBooks contractAmount: $${contractAmount} for job ${jobId}`,
+      );
+    } else {
+      // For v1, use systemSize as a placeholder for contract amount if available
+      contractAmount = job.systemSize ? job.systemSize * 3.5 * 1000 : 10000; // placeholder: $3.50/W
+    }
 
     // For v1, leave costs as null unless provided
     const estimatedCost = null;
@@ -189,6 +205,14 @@ export class ProfitabilityService {
     // For scheduling risk, we'd query scheduling data but for v1 keep it simple
     const schedulingRisk = null;
 
+    // Determine accountingSource:
+    // - If we just used QuickBooks data, preserve that flag
+    // - Otherwise, mark as PLACEHOLDER
+    const accountingSource = hasQuickbooksData ? 'QUICKBOOKS' : 'PLACEHOLDER';
+    const accountingLastSyncAt = hasQuickbooksData
+      ? job.financialSnapshot?.accountingLastSyncAt ?? null
+      : null;
+
     // Upsert snapshot
     const snapshot = await prisma.jobFinancialSnapshot.upsert({
       where: { jobId },
@@ -202,9 +226,12 @@ export class ProfitabilityService {
         changeOrdersAmount,
         riskLevel,
         schedulingRisk,
+        accountingSource,
+        accountingLastSyncAt,
       },
       update: {
-        contractAmount,
+        // Only update contractAmount if NOT from QuickBooks
+        ...(hasQuickbooksData ? {} : { contractAmount }),
         estimatedCost,
         actualCost,
         marginAmount,
@@ -212,6 +239,8 @@ export class ProfitabilityService {
         changeOrdersAmount,
         riskLevel,
         schedulingRisk,
+        // Preserve accounting metadata if QuickBooks
+        ...(hasQuickbooksData ? {} : { accountingSource, accountingLastSyncAt }),
       },
     });
 
@@ -277,6 +306,10 @@ export class ProfitabilityService {
       profitabilityLevel,
       riskLevel: snapshot.riskLevel,
       schedulingRisk: snapshot.schedulingRisk,
+      accountingSource: snapshot.accountingSource || null,
+      accountingLastSyncAt: snapshot.accountingLastSyncAt
+        ? snapshot.accountingLastSyncAt.toISOString()
+        : null,
     };
   }
 

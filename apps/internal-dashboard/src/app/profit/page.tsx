@@ -7,6 +7,7 @@ import type {
   ProfitDashboardSummaryDTO,
   JobProfitabilityDTO,
   JobProfitabilityLevel,
+  AccountingSource,
 } from '@greenenergy/shared-types';
 
 export default function ProfitPage() {
@@ -17,6 +18,7 @@ export default function ProfitPage() {
   
   const [profitabilityFilter, setProfitabilityFilter] = useState<string>('ALL');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
+  const [syncingJobId, setSyncingJobId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -73,6 +75,55 @@ export default function ProfitPage() {
         {risk}
       </span>
     );
+  };
+
+  const getAccountingSourceBadge = (source: AccountingSource | null | undefined) => {
+    if (!source || source === 'PLACEHOLDER') {
+      return (
+        <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-700">
+          Placeholder
+        </span>
+      );
+    }
+    if (source === 'QUICKBOOKS') {
+      return (
+        <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800">
+          QuickBooks
+        </span>
+      );
+    }
+    if (source === 'MANUAL') {
+      return (
+        <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800">
+          Manual
+        </span>
+      );
+    }
+    return <span className="text-gray-400">-</span>;
+  };
+
+  const handleSyncJob = async (jobId: string) => {
+    try {
+      setSyncingJobId(jobId);
+      const response = await fetch(`/api/v1/accounting/jobs/${jobId}/sync`, {
+        method: 'POST',
+        headers: {
+          'x-internal-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync job from QuickBooks');
+      }
+
+      // Refresh data after sync
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to sync job:', err);
+      alert('Failed to sync job from QuickBooks. Check console for details.');
+    } finally {
+      setSyncingJobId(null);
+    }
   };
 
   const formatCurrency = (amount: number | null | undefined) => {
@@ -210,13 +261,14 @@ export default function ProfitPage() {
                   <th className="px-4 py-3 font-medium text-gray-700">Margin %</th>
                   <th className="px-4 py-3 font-medium text-gray-700">Profitability</th>
                   <th className="px-4 py-3 font-medium text-gray-700">Risk Level</th>
+                  <th className="px-4 py-3 font-medium text-gray-700">Source</th>
                   <th className="px-4 py-3 font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredJobs.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                       No jobs found for the selected filters.
                     </td>
                   </tr>
@@ -237,12 +289,33 @@ export default function ProfitPage() {
                       <td className="px-4 py-3">{getProfitabilityBadge(job.profitabilityLevel)}</td>
                       <td className="px-4 py-3">{getRiskBadge(job.riskLevel)}</td>
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/risk/${job.jobId}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          View Risk
-                        </Link>
+                        <div className="flex flex-col gap-1">
+                          {getAccountingSourceBadge(job.accountingSource)}
+                          {job.accountingLastSyncAt && (
+                            <span className="text-xs text-gray-500">
+                              {new Date(job.accountingLastSyncAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/risk/${job.jobId}`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline text-sm"
+                          >
+                            View Risk
+                          </Link>
+                          {job.accountingSource !== 'QUICKBOOKS' && (
+                            <button
+                              onClick={() => handleSyncJob(job.jobId)}
+                              disabled={syncingJobId === job.jobId}
+                              className="text-sm text-green-600 hover:text-green-800 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {syncingJobId === job.jobId ? 'Syncing...' : 'Sync QB'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

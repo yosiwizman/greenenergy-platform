@@ -584,10 +584,61 @@ POST  /api/v1/profit/recalculate-all              # Recalculate all job snapshot
 - **HIGH**: marginPercent ≥ 25%
 
 **Future Enhancements**:
-- QuickBooks/accounting software integration
 - Per-cost-category breakdown (labor, materials, permits)
 - Time-series margin tracking
 - Actual cost tracking from invoices and expenses
+
+## 💼 Accounting & QuickBooks Integration
+
+Phase 3 Sprint 1 introduced QuickBooks Online integration to sync real financial data into the Profit Dashboard, replacing placeholder contract amounts with actual invoice data.
+
+**Features**:
+
+- ✅ QuickBooks Online API integration (read-only)
+- ✅ Contract amount sync from QB invoices
+- ✅ Accounting source tracking (PLACEHOLDER, QUICKBOOKS, MANUAL)
+- ✅ Sync timestamp tracking
+- ✅ Error-resilient batch sync
+- ✅ UI indicators showing data source with sync buttons
+
+**API Endpoints**:
+
+```
+POST  /api/v1/accounting/jobs/:jobId/sync    # Sync single job from QuickBooks
+POST  /api/v1/accounting/sync-all            # Sync all active jobs from QuickBooks
+```
+
+**Configuration** (Environment Variables):
+
+```bash
+QB_ENABLED=true                                # Enable/disable QuickBooks sync
+QB_BASE_URL=https://quickbooks.api.intuit.com  # QuickBooks API base URL
+QB_COMPANY_ID=your_company_id                  # QuickBooks Company ID (Realm ID)
+QB_ACCESS_TOKEN=your_access_token              # Current access token (v1: manual refresh)
+```
+
+**QuickBooks Mapping**:
+- `Job.jobNimbusId` ↔ `QuickBooks Invoice.DocNumber`
+- `Invoice.TotalAmt` → `JobFinancialSnapshot.contractAmount`
+- Multiple invoices: Uses latest by TxnDate
+
+**Service Behavior**:
+- ProfitabilityService now respects QuickBooks data
+- If `accountingSource = 'QUICKBOOKS'`, `contractAmount` is NOT overwritten
+- Placeholder calculation only used when no QB data exists
+
+**Dashboard Enhancements**:
+- Accounting Source column with color-coded badges (Blue=QuickBooks, Gray=Placeholder, Purple=Manual)
+- Sync timestamp display
+- Per-job "Sync QB" button for manual sync
+
+**Future Enhancements**:
+- OAuth2 automatic token refresh
+- Cost breakdown sync (labor, materials, permits)
+- Multi-invoice support
+- Webhook integration for real-time updates
+
+See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation.
 
 ## 🔗 Embedded Panels for JobNimbus
 

@@ -2,14 +2,36 @@
 
 **Goal**: Full automation, intelligent dispatching, finance integrations, forecasting, and advanced command center.
 
-## Sprint 1: Automation Engine (Weeks 21-22)
+## Sprint 1: QuickBooks Accounting Integration ✅ COMPLETE
 
-- Workflow automation builder
-- Triggered actions based on job events
-- Automated task assignment
-- Email and SMS notifications
+**Status**: ✅ Delivered
 
-## Sprint 2: Intelligent Dispatching (Weeks 23-24)
+**Deliverables**:
+- ✅ QuickBooks Online API client (read-only)
+- ✅ Contract amount sync from QB invoices
+- ✅ Accounting source tracking (PLACEHOLDER, QUICKBOOKS, MANUAL)
+- ✅ JobFinancialSnapshot schema extensions
+- ✅ AccountingService with sync endpoints
+- ✅ ProfitabilityService respects QuickBooks data
+- ✅ Profit Dashboard UI enhancements (source badges, sync buttons)
+- ✅ Comprehensive test coverage (99 tests passing)
+- ✅ Full documentation (docs/12-accounting-integration.md)
+
+**Technical Details**:
+- `POST /api/v1/accounting/jobs/:jobId/sync` - Sync single job
+- `POST /api/v1/accounting/sync-all` - Batch sync all active jobs
+- Job.jobNimbusId ↔ QuickBooks Invoice.DocNumber mapping
+- Configurable via environment variables (QB_ENABLED, QB_COMPANY_ID, etc.)
+- Error-resilient with graceful fallback to placeholder data
+
+**Future Enhancements**:
+- OAuth2 automatic token refresh
+- Cost breakdown sync (labor, materials, permits)
+- Multi-invoice support
+- Webhook integration for real-time updates
+- Xero and other accounting platforms
+
+## Sprint 2: Intelligent Dispatching
 
 - AI-driven crew scheduling
 - Route optimization
