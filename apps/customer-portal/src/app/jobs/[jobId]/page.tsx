@@ -137,7 +137,14 @@ export default function JobDetailPage() {
 
         {activeTab === 'status' && <StatusTab statusTimeline={jobView.statusTimeline} />}
         {activeTab === 'photos' && <PhotosTab photos={jobView.photos} />}
-        {activeTab === 'documents' && <DocumentsTab documents={jobView.documents} />}
+        {activeTab === 'documents' && (
+          <DocumentsTab
+            documents={jobView.documents}
+            warranty={jobView.warranty}
+            jobId={jobId}
+            token={token}
+          />
+        )}
       </main>
     </div>
   );
@@ -337,7 +344,244 @@ function PhotosTab({ photos }: { photos: PortalJobPhoto[] }) {
   );
 }
 
-function DocumentsTab({ documents }: { documents: PortalJobDocument[] }) {
+function DocumentsTab({
+  documents,
+  warranty,
+  jobId,
+  token,
+}: {
+  documents: PortalJobDocument[];
+  warranty?: PortalJobView['warranty'];
+  jobId: string;
+  token: string;
+}) {
+  return (
+    <div className="space-y-6">
+      <WarrantyCard warranty={warranty} />
+      <ServiceRequestForm jobId={jobId} token={token} />
+      <DocumentsList documents={documents} />
+    </div>
+  );
+}
+
+function WarrantyCard({ warranty }: { warranty?: PortalJobView['warranty'] }) {
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'bg-green-100 text-green-700';
+      case 'PENDING_ACTIVATION':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'EXPIRED':
+        return 'bg-gray-100 text-gray-700';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  if (!warranty) {
+    return (
+      <Card>
+        <Card.Header>
+          <Card.Title>Warranty Information</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <p className="text-gray-600">
+            Warranty information will appear here after your project is completed.
+          </p>
+        </Card.Content>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <Card.Header>
+        <div className="flex items-center justify-between">
+          <Card.Title>Warranty Information</Card.Title>
+          <Badge className={getStatusBadgeClass(warranty.status)}>{warranty.status}</Badge>
+        </div>
+      </Card.Header>
+      <Card.Content>
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Type</p>
+              <p className="text-lg font-semibold">{warranty.type}</p>
+            </div>
+            {warranty.provider && (
+              <div>
+                <p className="text-sm font-medium text-gray-500">Provider</p>
+                <p className="text-lg font-semibold">{warranty.provider}</p>
+              </div>
+            )}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Start Date</p>
+              <p className="text-base">{formatDate(warranty.startDate)}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">End Date</p>
+              <p className="text-base">{formatDate(warranty.endDate)}</p>
+            </div>
+          </div>
+          {warranty.coverageSummary && (
+            <div>
+              <p className="text-sm font-medium text-gray-500">Coverage</p>
+              <p className="text-sm text-gray-700">{warranty.coverageSummary}</p>
+            </div>
+          )}
+          {warranty.documentUrl && (
+            <div className="pt-2">
+              <a
+                href={warranty.documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
+              >
+                📄 Download Warranty Document
+              </a>
+            </div>
+          )}
+        </div>
+      </Card.Content>
+    </Card>
+  );
+}
+
+function ServiceRequestForm({ jobId, token }: { jobId: string; token: string }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!title.trim() || !description.trim()) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+    setSubmitStatus('idle');
+
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
+      const response = await fetch(
+        `${API_BASE_URL}/portal/jobs/${jobId}/warranty-claims?token=${encodeURIComponent(token)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title, description }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Failed to submit request' }));
+        throw new Error(error.message || 'Failed to submit request');
+      }
+
+      setTitle('');
+      setDescription('');
+      setSubmitStatus('success');
+      setTimeout(() => setSubmitStatus('idle'), 5000);
+    } catch (error) {
+      setSubmitStatus('error');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Something went wrong. Please try again later.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <Card.Header>
+        <Card.Title>Request Service</Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <p className="mb-4 text-sm text-gray-600">
+          If you're experiencing an issue with your system, you can request service here. Our team
+          will review and follow up.
+        </p>
+        {/* TODO: Add support for photo/file uploads for claims */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+              Issue Summary <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., System not producing power"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 sm:text-sm"
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Please describe the issue in detail..."
+              rows={4}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 sm:text-sm"
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+
+          {errorMessage && (
+            <div className="rounded-md bg-red-50 p-3">
+              <p className="text-sm text-red-600">{errorMessage}</p>
+            </div>
+          )}
+
+          {submitStatus === 'success' && (
+            <div className="rounded-md bg-green-50 p-3">
+              <p className="text-sm text-green-600">
+                ✓ Your request has been received. Our team will review it and follow up.
+              </p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:bg-gray-400 sm:w-auto"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+          </button>
+        </form>
+      </Card.Content>
+    </Card>
+  );
+}
+
+function DocumentsList({ documents }: { documents: PortalJobDocument[] }) {
   if (documents.length === 0) {
     return (
       <Card>

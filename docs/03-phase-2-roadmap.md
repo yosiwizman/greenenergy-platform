@@ -16,12 +16,29 @@
 - Safety score per subcontractor
 - Compliance reporting
 
-## Sprint 3: Warranty Management (Weeks 15-16)
+## Sprint 3: Warranty Management (Weeks 15-16) ✅ COMPLETE
 
-- Warranty registration and tracking
-- Claim filing workflow
-- Warranty expiration alerts
-- Warranty provider integration
+**Delivered:**
+- Warranty activation and tracking system
+- Warranty claim management (internal and portal)
+- Automated expiry monitoring with daily scheduled jobs
+- Customer portal warranty display and service request form
+- Internal dashboard warranty overview page
+- Full JobNimbus integration for activations, claims, and expiry warnings
+- Unit tests for warranty service
+- Complete API with 9 endpoints (warranty CRUD, claims, summary)
+
+**Key Features:**
+- Warranty activation upon job completion with configurable terms (default 10 years)
+- Portal service request form for customers to submit warranty claims
+- Summary dashboard with active, expiring, and expired warranty counts
+- Claim status workflow: OPEN → IN_REVIEW → APPROVED/REJECTED → RESOLVED
+- Priority levels: LOW, MEDIUM, HIGH
+- Source tracking: PORTAL vs INTERNAL claims
+
+**Documentation:**
+- `docs/08-warranty-system.md` - Complete system documentation
+- Test coverage in `apps/core-api/src/modules/warranty/__tests__/warranty.service.spec.ts`
 
 ## Sprint 4: Material ETA Tracking (Weeks 17-18)
 

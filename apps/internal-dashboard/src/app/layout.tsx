@@ -16,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Risk Dashboard', href: '/risk' },
     { name: 'Subcontractors', href: '/subcontractors' },
     { name: 'Safety', href: '/safety' },
+    { name: 'Warranty', href: '/warranty' },
   ];
 
   return (

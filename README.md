@@ -386,6 +386,62 @@ JOBNIMBUS_API_KEY="your-jobnimbus-api-key"         # JobNimbus API authenticatio
 
 See **[Safety & Incident Reporting System](docs/07-safety-system.md)** for detailed documentation.
 
+## 🛡️ Warranty System
+
+Phase 2 Sprint 3 introduced a comprehensive warranty management system with automated expiry tracking, customer service requests, and claim management.
+
+**Features**:
+
+- ✅ Warranty activation upon job completion with configurable terms (default 10 years)
+- ✅ Automated expiry monitoring with daily scheduled jobs
+- ✅ Customer portal warranty display and service request form
+- ✅ Internal claim management with status workflow
+- ✅ Priority levels (LOW, MEDIUM, HIGH) for claim triage
+- ✅ JobNimbus integration for activations, claims, and expiry warnings
+- ✅ Summary dashboard with active, expiring, and expired warranty counts
+
+**Warranty Status**: PENDING_ACTIVATION | ACTIVE | EXPIRED | CANCELLED
+
+**Claim Status**: OPEN | IN_REVIEW | APPROVED | REJECTED | RESOLVED
+
+**API Endpoints**:
+
+```
+POST   /api/v1/warranty/jobs/:jobId/activate          # Activate warranty
+GET    /api/v1/warranty/jobs/:jobId                   # Get warranty for job
+GET    /api/v1/warranty                               # List warranties (with filters)
+GET    /api/v1/warranty/summary                       # Get summary statistics
+POST   /api/v1/warranty/claims                        # Create internal claim
+GET    /api/v1/warranty/claims                        # List claims (with filters)
+GET    /api/v1/warranty/claims/:id                    # Get single claim
+PATCH  /api/v1/warranty/claims/:id/status             # Update claim status
+POST   /api/v1/portal/jobs/:jobId/warranty-claims     # Submit claim from portal
+```
+
+**Dashboard Routes**:
+
+- `/warranty` - Overview with summary cards, warranties table, and recent claims
+
+**Customer Portal**:
+
+- Job detail page → Documents tab displays warranty information with status badge
+- Service request form allows customers to submit warranty claims directly
+- Warranty document download if available
+
+**Scheduled Jobs**:
+
+- Daily at 3 AM: Processes expiring warranties (default 30 days threshold)
+- Creates JobNimbus notes and tasks for expiry warnings
+
+**Configuration**:
+
+```env
+WARRANTY_DEFAULT_TERM_MONTHS=120          # Default warranty duration (10 years)
+WARRANTY_EXPIRY_NOTICE_DAYS=30            # Days before expiry to send notifications
+```
+
+See **[Warranty System](docs/08-warranty-system.md)** for detailed documentation.
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.
@@ -478,6 +534,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[JobNimbus Integration](docs/05-jobnimbus-integration.md)** - Integration guide
 - **[Subcontractor Management](docs/06-subcontractor-system.md)** - Compliance & performance tracking
 - **[Safety & Incident Reporting](docs/07-safety-system.md)** - Safety management & OSHA compliance
+- **[Warranty System](docs/08-warranty-system.md)** - Warranty management & claim tracking
 
 ## 🎯 Development Roadmap
 
@@ -497,7 +554,7 @@ Comprehensive documentation is available in the `docs/` directory:
 
 - ✅ Subcontractor Management v1 (Sprint 1: directory, compliance tracking, performance scoring, job assignment guards, JobNimbus integration)
 - ✅ Safety & Incident Reporting v1 (Sprint 2: incident tracking, safety checklists, OSHA summaries, risk/subcontractor integration, JobNimbus notifications)
-- Warranty management
+- ✅ Warranty Management v1 (Sprint 3: activation, expiry tracking, claim management, customer portal integration, internal dashboard)
 - Material ETA tracking
 - AI-powered photo QC
 
