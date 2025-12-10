@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
 import { JobService } from './job.service';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import type { CreateJobDto, UpdateJobDto } from '@greenenergy/shared-types';
 
 @Controller('jobs')

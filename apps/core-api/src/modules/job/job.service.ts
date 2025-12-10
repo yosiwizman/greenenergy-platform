@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import type { CreateJobDto, UpdateJobDto } from '@greenenergy/shared-types';
 
 @Injectable()
