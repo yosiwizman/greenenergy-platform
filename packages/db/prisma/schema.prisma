@@ -41,6 +41,7 @@ model Job {
   materialOrders  MaterialOrder[]
   subcontractorAssignments JobSubcontractorAssignment[]
   financialSnapshot JobFinancialSnapshot?
+  customerMessages CustomerMessage[]
 
   @@index([jobNimbusId])
   @@index([status])
@@ -500,4 +501,22 @@ model WorkflowActionLog {
 
   @@index([jobId, ruleKey, createdAt])
   @@map("workflow_action_logs")
+}
+
+model CustomerMessage {
+  id           String   @id @default(cuid())
+  jobId        String
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type         String   // 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC'
+  channel      String   // 'PORTAL' | 'EMAIL' | 'SMS'
+  source       String   // 'SYSTEM' | 'HUMAN' | 'AI_SUGGESTED'
+  title        String
+  body         String   @db.Text
+  createdAt    DateTime @default(now())
+  readAt       DateTime?
+  metadataJson Json?    @db.JsonB
+
+  @@index([jobId, createdAt])
+  @@index([type])
+  @@map("customer_messages")
 }

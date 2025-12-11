@@ -14,6 +14,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { CustomerPortalService } from './customer-portal.service';
 import { WarrantyService } from '../warranty/warranty.service';
+import { CustomerExperienceService } from '../customer-experience/customer-experience.service';
 import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
 import { prisma } from '@greenenergy/db';
 import type {
@@ -22,6 +23,7 @@ import type {
   ResolvePortalSessionResponse,
   PortalJobView,
   WarrantyClaimDTO,
+  CustomerMessageDTO,
 } from '@greenenergy/shared-types';
 
 @Controller('api/v1/portal')
@@ -29,6 +31,7 @@ export class CustomerPortalController {
   constructor(
     private readonly portalService: CustomerPortalService,
     private readonly warrantyService: WarrantyService,
+    private readonly cxService: CustomerExperienceService,
     private readonly configService: ConfigService
   ) {}
 
@@ -133,5 +136,75 @@ export class CustomerPortalController {
       },
       body
     );
+  }
+
+  /**
+   * Get messages for a job (portal session)
+   * GET /api/v1/portal/jobs/:jobId/messages
+   */
+  @Get('jobs/:jobId/messages')
+  async getJobMessages(
+    @Param('jobId') jobId: string,
+    @Query('token') token: string
+  ): Promise<CustomerMessageDTO[]> {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+
+    // Validate session and verify it's for this job
+    const session = await prisma.portalSession.findUnique({
+      where: { token },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Invalid session token');
+    }
+
+    if (session.jobId !== jobId) {
+      throw new UnauthorizedException('Session token is not valid for this job');
+    }
+
+    if (new Date() > session.expiresAt) {
+      throw new UnauthorizedException('Session token has expired');
+    }
+
+    // Get messages using CX service
+    return await this.cxService.getMessagesForJob(jobId);
+  }
+
+  /**
+   * Mark messages as read for a job (portal session)
+   * POST /api/v1/portal/jobs/:jobId/messages/read
+   */
+  @Post('jobs/:jobId/messages/read')
+  @HttpCode(HttpStatus.OK)
+  async markJobMessagesRead(
+    @Param('jobId') jobId: string,
+    @Query('token') token: string
+  ): Promise<{ ok: boolean }> {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+
+    // Validate session and verify it's for this job
+    const session = await prisma.portalSession.findUnique({
+      where: { token },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Invalid session token');
+    }
+
+    if (session.jobId !== jobId) {
+      throw new UnauthorizedException('Session token is not valid for this job');
+    }
+
+    if (new Date() > session.expiresAt) {
+      throw new UnauthorizedException('Session token has expired');
+    }
+
+    // Mark messages as read
+    await this.cxService.markMessagesReadForJob(jobId);
+    return { ok: true };
   }
 }

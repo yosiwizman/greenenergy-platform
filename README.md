@@ -547,6 +547,61 @@ POST  /api/v1/ai-ops/jobs/:jobId/customer-message   # Generate customer message
 
 See **[AI Operations Assistant](docs/10-ai-operations-assistant.md)** for detailed documentation.
 
+## 💬 Customer Experience Engine v1
+
+Phase 4 Sprint 1 introduced a structured customer messaging timeline system that lays the foundation for future email/SMS notifications.
+
+**Features**:
+
+- ✅ Message timeline stored per job (status updates, ETA messages, generic messages)
+- ✅ AI-assisted message generation using existing AI Ops Assistant
+- ✅ Customer portal integration with Messages tab
+- ✅ Internal APIs for operations staff to create and view messages
+- ✅ Read/unread tracking for customer engagement analytics
+- ✅ Message type classification (STATUS_UPDATE, ETA_UPDATE, GENERIC)
+- ✅ Channel preparation (PORTAL, EMAIL, SMS for future integration)
+- ✅ Source tracking (SYSTEM, HUMAN, AI_SUGGESTED)
+
+**API Endpoints**:
+
+```
+GET   /api/v1/cx/jobs/:jobId/messages              # List messages for job (internal)
+POST  /api/v1/cx/jobs/:jobId/messages              # Create manual message (internal)
+POST  /api/v1/cx/jobs/:jobId/messages/ai           # Generate AI message (internal)
+POST  /api/v1/cx/jobs/:jobId/read                  # Mark messages read (internal)
+GET   /api/v1/portal/jobs/:jobId/messages          # Fetch messages (customer portal)
+POST  /api/v1/portal/jobs/:jobId/messages/read     # Mark messages read (customer portal)
+```
+
+**Customer Portal**:
+
+- Job detail page → Messages tab displays chronological timeline
+- Type badges (STATUS_UPDATE, ETA_UPDATE, GENERIC)
+- AI-assisted indicator for AI-generated messages
+- Message count badge on tab button
+- Auto-marks messages as read when viewed
+
+**Message Types**:
+- **STATUS_UPDATE**: Project status changes and milestone completions
+- **ETA_UPDATE**: Installation timeline and material delivery updates
+- **GENERIC**: General announcements, holiday greetings, maintenance reminders
+
+**AI Integration**:
+- Reuses existing `AiOperationsService.generateCustomerMessage()` method
+- Supports tone control (FRIENDLY/FORMAL)
+- Custom prompts for specialized messages
+- Messages saved with `AI_SUGGESTED` source for review workflow
+
+**Future Enhancements (Phase 4 Sprint 2+)**:
+- Email/SMS delivery integration
+- Message templates library
+- Bulk messaging capabilities
+- Message approval workflow for AI-suggested drafts
+- Webhooks for automated message triggers
+- Customer engagement analytics (read rates, response times)
+
+See **[Customer Experience Engine](docs/15-customer-experience-engine.md)** for detailed documentation.
+
 ## 💰 Profit & Executive Dashboard
 
 Phase 2 Sprint 6 introduced a profit and executive dashboard for job-level profitability tracking and portfolio performance analysis without external accounting integration.

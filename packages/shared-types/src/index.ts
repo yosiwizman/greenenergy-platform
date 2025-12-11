@@ -173,11 +173,7 @@ export interface SafetyIncident {
 }
 
 // Warranty System Types (Phase 2 Sprint 3) - replaced old interface
-export type WarrantyStatus =
-  | 'PENDING_ACTIVATION'
-  | 'ACTIVE'
-  | 'EXPIRED'
-  | 'CANCELLED';
+export type WarrantyStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
 
 export interface WarrantyDTO {
   id: string;
@@ -193,12 +189,7 @@ export interface WarrantyDTO {
   activatedAt?: string;
 }
 
-export type WarrantyClaimStatus =
-  | 'OPEN'
-  | 'IN_REVIEW'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'RESOLVED';
+export type WarrantyClaimStatus = 'OPEN' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'RESOLVED';
 
 export type WarrantyClaimPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 
@@ -842,10 +833,7 @@ export interface ProfitDashboardJobFilter {
 }
 
 // Workflow Automation Types (Phase 3 Sprint 4)
-export type WorkflowActionType =
-  | 'JOBNIMBUS_TASK'
-  | 'JOBNIMBUS_NOTE'
-  | 'INTERNAL_FLAG';
+export type WorkflowActionType = 'JOBNIMBUS_TASK' | 'JOBNIMBUS_NOTE' | 'INTERNAL_FLAG';
 
 export type WorkflowDepartment =
   | 'SALES'
@@ -995,4 +983,33 @@ export interface DispatchOverviewDTO {
   jobsDispatchable: number;
   jobsBlocked: number;
   recommendations: DispatchRecommendationDTO[];
+}
+
+// Customer Experience Engine Types (Phase 4 Sprint 1)
+export type CustomerMessageType = 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC';
+
+export type CustomerMessageChannel = 'PORTAL' | 'EMAIL' | 'SMS';
+
+export type CustomerMessageSource = 'SYSTEM' | 'HUMAN' | 'AI_SUGGESTED';
+
+export interface CustomerMessageDTO {
+  id: string;
+  jobId: string;
+  type: CustomerMessageType;
+  channel: CustomerMessageChannel;
+  source: CustomerMessageSource;
+  title: string;
+  body: string;
+  createdAt: string;
+  readAt?: string | null;
+  metadataJson?: Record<string, unknown> | null;
+}
+
+export interface CreateCustomerMessageInput {
+  type: CustomerMessageType;
+  channel?: CustomerMessageChannel; // default PORTAL
+  source?: CustomerMessageSource; // default HUMAN (for internal UI)
+  title: string;
+  body: string;
+  metadataJson?: Record<string, unknown>;
 }

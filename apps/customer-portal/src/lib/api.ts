@@ -1,4 +1,8 @@
-import type { PortalJobView, ResolvePortalSessionResponse } from '@greenenergy/shared-types';
+import type {
+  PortalJobView,
+  ResolvePortalSessionResponse,
+  CustomerMessageDTO,
+} from '@greenenergy/shared-types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
@@ -67,5 +71,64 @@ export async function fetchJobView(jobId: string, token: string): Promise<Portal
       throw error;
     }
     throw new PortalAPIError('Network error while fetching job view');
+  }
+}
+
+/**
+ * Fetch messages for a job (portal session)
+ */
+export async function fetchJobMessages(
+  jobId: string,
+  token: string
+): Promise<CustomerMessageDTO[]> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/portal/jobs/${jobId}/messages?token=${encodeURIComponent(token)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to fetch messages' }));
+      throw new PortalAPIError(error.message || 'Failed to fetch messages', response.status);
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof PortalAPIError) {
+      throw error;
+    }
+    throw new PortalAPIError('Network error while fetching messages');
+  }
+}
+
+/**
+ * Mark all messages for a job as read (portal session)
+ */
+export async function markMessagesRead(jobId: string, token: string): Promise<void> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/portal/jobs/${jobId}/messages/read?token=${encodeURIComponent(token)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to mark messages read' }));
+      throw new PortalAPIError(error.message || 'Failed to mark messages read', response.status);
+    }
+  } catch (error) {
+    if (error instanceof PortalAPIError) {
+      throw error;
+    }
+    throw new PortalAPIError('Network error while marking messages read');
   }
 }

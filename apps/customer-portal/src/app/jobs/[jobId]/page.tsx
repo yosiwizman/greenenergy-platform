@@ -3,10 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Card, StatusPill, Badge } from '@greenenergy/ui';
-import { fetchJobView, PortalAPIError } from '@/lib/api';
-import type { PortalJobView, PortalJobPhoto, PortalJobDocument } from '@greenenergy/shared-types';
+import { fetchJobView, fetchJobMessages, PortalAPIError } from '@/lib/api';
+import type {
+  PortalJobView,
+  PortalJobPhoto,
+  PortalJobDocument,
+  CustomerMessageDTO,
+} from '@greenenergy/shared-types';
 
-type TabType = 'status' | 'photos' | 'documents';
+type TabType = 'status' | 'photos' | 'documents' | 'messages';
 
 export default function JobDetailPage() {
   const params = useParams();
@@ -18,8 +23,10 @@ export default function JobDetailPage() {
     '';
 
   const [jobView, setJobView] = useState<PortalJobView | null>(null);
+  const [messages, setMessages] = useState<CustomerMessageDTO[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('status');
   const [isLoading, setIsLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,9 +36,13 @@ export default function JobDetailPage() {
       return;
     }
 
-    fetchJobView(jobId, token)
-      .then((data) => {
-        setJobView(data);
+    Promise.all([
+      fetchJobView(jobId, token),
+      fetchJobMessages(jobId, token),
+    ])
+      .then(([jobData, messagesData]) => {
+        setJobView(jobData);
+        setMessages(messagesData);
         setIsLoading(false);
       })
       .catch((err) => {
@@ -132,6 +143,12 @@ export default function JobDetailPage() {
               isActive={activeTab === 'documents'}
               onClick={() => setActiveTab('documents')}
             />
+            <TabButton
+              label="Messages"
+              count={messages.length}
+              isActive={activeTab === 'messages'}
+              onClick={() => setActiveTab('messages')}
+            />
           </nav>
         </div>
 
@@ -145,6 +162,7 @@ export default function JobDetailPage() {
             token={token}
           />
         )}
+        {activeTab === 'messages' && <MessagesTab messages={messages} />}
       </main>
     </div>
   );
@@ -652,6 +670,93 @@ function DocumentsList({ documents }: { documents: PortalJobDocument[] }) {
               >
                 View
               </a>
+            </div>
+          ))}
+        </div>
+      </Card.Content>
+    </Card>
+  );
+}
+
+function MessagesTab({ messages }: { messages: CustomerMessageDTO[] }) {
+  const getTypeBadge = (type: CustomerMessageDTO['type']) => {
+    switch (type) {
+      case 'STATUS_UPDATE':
+        return <Badge className="bg-blue-100 text-blue-700">Status Update</Badge>;
+      case 'ETA_UPDATE':
+        return <Badge className="bg-purple-100 text-purple-700">ETA Update</Badge>;
+      case 'GENERIC':
+        return <Badge className="bg-gray-100 text-gray-700">Message</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-700">Message</Badge>;
+    }
+  };
+
+  const getSourceLabel = (source: CustomerMessageDTO['source']) => {
+    if (source === 'AI_SUGGESTED') {
+      return (
+        <span className="text-xs text-gray-500 italic">✨ AI-assisted</span>
+      );
+    }
+    return null;
+  };
+
+  if (messages.length === 0) {
+    return (
+      <Card>
+        <Card.Content className="py-12 text-center">
+          <p className="text-gray-600">No updates yet.</p>
+          <p className="mt-2 text-sm text-gray-500">
+            You'll see status and ETA updates here as your project progresses.
+          </p>
+        </Card.Content>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <Card.Header>
+        <Card.Title>Messages & Updates</Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <div className="space-y-6">
+          {messages.map((message, index) => (
+            <div key={message.id} className="relative">
+              {index < messages.length - 1 && (
+                <div
+                  className="absolute left-4 top-12 h-full w-0.5 bg-gray-200"
+                />
+              )}
+              <div className="flex gap-4">
+                <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600">
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                </div>
+                <div className="flex-1 pb-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    {getTypeBadge(message.type)}
+                    {getSourceLabel(message.source)}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {message.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
+                    {message.body}
+                  </p>
+                  <p className="mt-2 text-xs text-gray-500">
+                    {new Date(message.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              </div>
             </div>
           ))}
         </div>

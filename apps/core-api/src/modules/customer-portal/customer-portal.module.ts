@@ -3,9 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { CustomerPortalService } from './customer-portal.service';
 import { CustomerPortalController } from './customer-portal.controller';
 import { WarrantyModule } from '../warranty/warranty.module';
+import { CustomerExperienceModule } from '../customer-experience/customer-experience.module';
 
 @Module({
-  imports: [ConfigModule, WarrantyModule],
+  imports: [ConfigModule, WarrantyModule, CustomerExperienceModule],
   providers: [CustomerPortalService],
   controllers: [CustomerPortalController],
   exports: [CustomerPortalService],
