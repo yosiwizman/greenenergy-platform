@@ -1099,3 +1099,39 @@ export interface CreateCustomerMessageInput {
   metadataJson?: Record<string, unknown>;
   sendEmail?: boolean; // Phase 4 Sprint 2: trigger email sending (only for channel=EMAIL)
 }
+
+// Forecasting & Analytics Types (Phase 6 Sprint 1)
+export interface CashflowPointDTO {
+  date: string;           // ISO date (YYYY-MM-DD) representing the bucket (e.g., week ending)
+  expectedInflow: number; // sum of amounts expected that date/bucket
+  invoiceCount: number;
+  overduePortion: number; // part of expectedInflow coming from overdue invoices/AR
+}
+
+export interface CashflowForecastDTO {
+  generatedAt: string;        // ISO timestamp
+  horizonWeeks: number;       // e.g., 12
+  points: CashflowPointDTO[]; // ordered by date ascending
+}
+
+export interface PipelineBucketDTO {
+  statusKey: string;         // internal status key
+  statusLabel: string;       // human readable
+  winProbability: number;    // 0–1
+  jobsCount: number;
+  totalAmount: number;
+  weightedAmount: number;    // totalAmount * winProbability
+}
+
+export interface PipelineForecastDTO {
+  generatedAt: string;
+  totalPipelineAmount: number;
+  totalWeightedAmount: number;
+  buckets: PipelineBucketDTO[];
+}
+
+export interface ForecastOverviewDTO {
+  generatedAt: string;
+  cashflow: CashflowForecastDTO;
+  pipeline: PipelineForecastDTO;
+}

@@ -817,6 +817,71 @@ Extended `JobFinancialSnapshot` with AR fields:
 
 See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation (includes AR & aging sections).
 
+## 📈 Forecasting Dashboard
+
+**Phase 6 Sprint 1**: Executive-level forecasting dashboard providing deterministic cashflow and weighted pipeline projections.
+
+**Features**:
+
+- ✅ **12-Week Cashflow Forecast**: Expected cash inflows based on open invoice due dates
+- ✅ **Weighted Pipeline**: Pipeline value by job status with deterministic win probabilities
+- ✅ **Executive Dashboard**: `/forecast` page with summary cards and visualizations
+- ✅ **Forecast API Endpoints**:
+  - `GET /api/v1/forecast/cashflow?weeks=12` - Cashflow forecast (configurable 1-52 weeks)
+  - `GET /api/v1/forecast/pipeline` - Pipeline forecast with weighted values
+  - `GET /api/v1/forecast/overview?weeks=12` - Combined forecast overview
+- ✅ **Deterministic Calculations**: No AI/ML dependencies (status-based probabilities)
+- ✅ **Comprehensive Tests**: 9 tests covering cashflow and pipeline logic
+
+**Cashflow Forecasting**:
+
+- Weekly buckets (Monday start)
+- Open invoices with `balance > 0`
+- Assigns invoices to weeks based on `dueDate`
+- Overdue invoices contribute to first week with `overduePortion` flag
+- Configurable horizon (1-52 weeks, default 12)
+
+**Pipeline Forecasting**:
+
+- Status-based win probabilities (LEAD: 20%, QUALIFIED: 30%, SCHEDULED: 85%, IN_PROGRESS: 95%, etc.)
+- Filters pipeline jobs (excludes COMPLETE, CANCELLED, LOST, and PAID)
+- Calculates `weightedAmount = totalAmount × winProbability`
+- Sorted by weighted amount descending
+
+**Win Probability Mapping**:
+
+| Status | Win Probability |
+|--------|-----------------|
+| LEAD | 20% |
+| QUALIFIED | 30% |
+| SITE_SURVEY | 40% |
+| DESIGN | 50% |
+| PERMITTING | 60% |
+| APPROVED | 70% |
+| SCHEDULED | 85% |
+| IN_PROGRESS | 95% |
+| *Unknown* | 15% (default) |
+
+**Dashboard Metrics** (`/forecast`):
+
+- Total Pipeline (Gross)
+- Weighted Pipeline
+- Expected Inflow (Next 30 Days)
+- Expected Inflow (Next 90 Days)
+- Weekly cashflow chart with overdue indicators
+- Pipeline breakdown table by status
+
+**Future Enhancements** (Phase 6 Sprint 2+):
+
+- AI-powered payment velocity modeling
+- Confidence intervals and scenario analysis
+- Seasonality adjustment using time-series analysis
+- Win probability ML model trained on historical data
+- Customer payment scoring
+- Integration with financial planning tools
+
+See **[Forecasting & Analytics](docs/17-forecasting-and-analytics.md)** for detailed documentation.
+
 ## 🚀 Deployment & Environments
 
 **Phase 3 Sprint 3 & 8**: Production-ready deployment strategy with automated smoke tests for operational readiness.
