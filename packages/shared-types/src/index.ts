@@ -857,6 +857,26 @@ export interface ArAgingSummaryDTO {
   buckets: ArAgingBucketData[];
 }
 
+// Invoice Types (Phase 5 Sprint 3)
+export interface InvoiceDTO {
+  id: string;
+  jobId: string;
+  externalId: string;
+  number?: string | null;
+  dueDate?: string | null;       // ISO string
+  totalAmount?: number | null;
+  balance?: number | null;
+  status?: string | null;
+  publicUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateInvoiceForJobInput {
+  jobId: string;
+  sendEmail?: boolean; // default true
+}
+
 export interface JobProfitabilityDTO {
   jobId: string;
   jobNumber?: string | null;
@@ -1051,7 +1071,7 @@ export interface DispatchOverviewDTO {
 }
 
 // Customer Experience Engine Types (Phase 4 Sprint 1)
-export type CustomerMessageType = 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC' | 'PAYMENT_REMINDER';
+export type CustomerMessageType = 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC' | 'PAYMENT_REMINDER' | 'INVOICE_ISSUED';
 
 export type CustomerMessageChannel = 'PORTAL' | 'EMAIL' | 'SMS';
 

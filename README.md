@@ -793,13 +793,27 @@ Extended `JobFinancialSnapshot` with AR fields:
 - ✅ **Workflow Integration**: Payment reminders triggered via workflow engine with 7-day cooldown
 - ✅ `GET /api/v1/finance/ar/aging` - Aging summary endpoint
 
-**Future Enhancements** (Phase 5 Sprint 3+):
-- Invoice generation from platform
+**Phase 5 Sprint 3 Extensions**:
+
+- ✅ **Invoice Creation**: Generate invoices in QuickBooks from the platform
+- ✅ **Invoice Data Model**: Full invoice storage and retrieval with QB sync
+- ✅ **Invoice API Endpoints**:
+  - `POST /api/v1/finance/ar/jobs/:jobId/invoices` - Create invoice in QuickBooks
+  - `GET /api/v1/finance/ar/jobs/:jobId/invoices` - List invoices for job
+  - `GET /api/v1/finance/ar/jobs/:jobId/invoices/:invoiceId` - Get specific invoice
+- ✅ **INVOICE_ISSUED Email Notifications**: Automated customer emails with invoice details
+- ✅ **Primary Invoice Tracking**: Link invoices to financial snapshots
+- ✅ **Test Coverage**: Comprehensive tests for invoice creation and retrieval
+
+**Future Enhancements** (Phase 5 Sprint 4+):
+- Multi-line item invoices with custom descriptions
+- Custom invoice templates and branding
 - Escalation reminders (multiple stages)
 - SMS reminders
-- Payment links in emails
+- Payment links in emails (Stripe, Square integration)
 - AI-powered payment forecasting
-- Payment processor integration (Stripe, Square)
+- Invoice PDF generation and delivery
+- Bulk invoice creation
 
 See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation (includes AR & aging sections).
 

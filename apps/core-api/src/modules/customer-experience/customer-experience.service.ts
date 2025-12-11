@@ -170,6 +170,7 @@ export class CustomerExperienceService {
       ETA_UPDATE: 'Installation Timeline Update',
       GENERIC: 'Message from Your Solar Team',
       PAYMENT_REMINDER: 'Payment Reminder',
+      INVOICE_ISSUED: 'Invoice Issued',
     };
 
     return titles[type];

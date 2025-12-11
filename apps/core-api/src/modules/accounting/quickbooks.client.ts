@@ -230,6 +230,94 @@ export class QuickbooksClient {
   }
 
   /**
+   * Create a new invoice in QuickBooks
+   * Returns the created invoice or null if disabled/error
+   */
+  async createInvoice(params: {
+    customerRef: { value: string; name?: string };
+    docNumber?: string;
+    dueDate?: string; // YYYY-MM-DD
+    lineItems: Array<{
+      description: string;
+      amount: number;
+    }>;
+  }): Promise<QuickbooksInvoice | null> {
+    if (!this.authService.isEnabled()) {
+      this.logger.debug('QuickBooks disabled, skipping invoice creation');
+      return null;
+    }
+
+    if (!this.companyId) {
+      this.logger.warn('QuickBooks credentials missing (QB_COMPANY_ID), cannot create invoice');
+      return null;
+    }
+
+    try {
+      this.logger.log(`Creating QuickBooks invoice for customer ${params.customerRef.value}`);
+
+      // Get access token from auth service
+      const accessToken = await this.authService.getAccessToken();
+
+      // Calculate total amount
+      const totalAmount = params.lineItems.reduce((sum, item) => sum + item.amount, 0);
+
+      // Build invoice payload
+      const invoicePayload: any = {
+        CustomerRef: params.customerRef,
+        Line: params.lineItems.map((item, index) => ({
+          Id: String(index + 1),
+          LineNum: index + 1,
+          Amount: item.amount,
+          DetailType: 'SalesItemLineDetail',
+          Description: item.description,
+          SalesItemLineDetail: {
+            Qty: 1,
+            UnitPrice: item.amount,
+            // Optional: Add ItemRef if you have a default service item in QB
+          },
+        })),
+        TxnDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD
+      };
+
+      // Add optional fields
+      if (params.docNumber) {
+        invoicePayload.DocNumber = params.docNumber;
+      }
+
+      if (params.dueDate) {
+        invoicePayload.DueDate = params.dueDate;
+      }
+
+      // POST to QuickBooks API
+      const url = `/v3/company/${this.companyId}/invoice`;
+      const response = await this.httpClient.post(url, invoicePayload, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      const invoice = response.data?.Invoice;
+
+      if (!invoice) {
+        this.logger.error('QuickBooks API returned no invoice in response');
+        return null;
+      }
+
+      this.logger.log(`Created QuickBooks invoice ${invoice.Id} (DocNumber: ${invoice.DocNumber})`);
+      return invoice;
+    } catch (error: any) {
+      this.logger.error('Failed to create QuickBooks invoice:', error.message);
+
+      // Log more details for debugging
+      if (error.response) {
+        this.logger.error(`QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      }
+
+      return null;
+    }
+  }
+
+  /**
    * Check if QuickBooks integration is enabled
    */
   isEnabled(): boolean {

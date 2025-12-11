@@ -43,6 +43,7 @@ model Job {
   financialSnapshot JobFinancialSnapshot?
   customerMessages CustomerMessage[]
   payments Payment[]
+  invoices Invoice[]
 
   @@index([jobNimbusId])
   @@index([status])
@@ -490,6 +491,10 @@ model JobFinancialSnapshot {
   lastPaymentAt     DateTime?
   invoiceDueDate    DateTime?
 
+  // Primary invoice reference (Phase 5 Sprint 3)
+  primaryInvoiceId String?
+  primaryInvoice   Invoice? @relation(fields: [primaryInvoiceId], references: [id], onDelete: SetNull)
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -549,4 +554,30 @@ model Payment {
   @@index([receivedAt])
   @@index([status])
   @@map("payments")
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  externalId  String   @unique  // QuickBooks Invoice Id
+  number      String?          // Invoice number shown to customer
+  dueDate     DateTime?
+  totalAmount Decimal? @db.Decimal(18, 2)
+  balance     Decimal? @db.Decimal(18, 2)
+  status      String?          // 'OPEN' | 'PAID' | 'VOIDED' | etc.
+
+  publicUrl   String?  @db.Text // Optional "pay/view" URL if available from QB
+  metadata    Json?    @db.JsonB
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  financialSnapshots JobFinancialSnapshot[]
+
+  @@index([jobId])
+  @@index([externalId])
+  @@index([status])
+  @@map("invoices")
 }

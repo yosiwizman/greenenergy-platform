@@ -1,7 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
 import { QuickbooksClient } from './quickbooks.client';
+import { CustomerExperienceService } from '../customer-experience/customer-experience.service';
 import type { JobFinancialSnapshot } from '@prisma/client';
+import type { InvoiceDTO } from '@greenenergy/shared-types';
+import { Decimal } from '@prisma/client/runtime/library';
 
 /**
  * AccountingService handles syncing financial data from QuickBooks
@@ -11,7 +14,10 @@ import type { JobFinancialSnapshot } from '@prisma/client';
 export class AccountingService {
   private readonly logger = new Logger(AccountingService.name);
 
-  constructor(private readonly quickbooksClient: QuickbooksClient) {}
+  constructor(
+    private readonly quickbooksClient: QuickbooksClient,
+    private readonly customerExperienceService: CustomerExperienceService,
+  ) {}
 
   /**
    * Sync a single job's financial data from QuickBooks
@@ -315,5 +321,170 @@ export class AccountingService {
     });
 
     return snapshot;
+  }
+
+  /**
+   * Create an invoice for a job in QuickBooks and persist it (Phase 5 Sprint 3)
+   * Optionally sends email notification via CX Engine
+   */
+  async createInvoiceForJob(
+    jobId: string,
+    options?: { sendEmail?: boolean },
+  ): Promise<InvoiceDTO> {
+    this.logger.log(`Creating invoice for job ${jobId}`);
+
+    // Load job with contacts and financial snapshot
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        contacts: true,
+        financialSnapshot: true,
+      },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Job with ID ${jobId} not found`);
+    }
+
+    // Determine invoice amount from financial snapshot
+    const contractAmount = job.financialSnapshot?.contractAmount || 10000;
+
+    // Calculate due date (14 days from now)
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14);
+    const dueDateStr = dueDate.toISOString().split('T')[0];
+
+    // Get customer reference (use jobNimbusId as fallback customer ID)
+    const customerRef = {
+      value: job.jobNimbusId || job.id,
+      name: job.customerName,
+    };
+
+    // Create invoice in QuickBooks
+    const qbInvoice = await this.quickbooksClient.createInvoice({
+      customerRef,
+      docNumber: job.jobNimbusId || undefined,
+      dueDate: dueDateStr,
+      lineItems: [
+        {
+          description: `Roofing project - Job ${job.jobNimbusId || job.id}`,
+          amount: contractAmount,
+        },
+      ],
+    });
+
+    if (!qbInvoice) {
+      throw new Error('Failed to create invoice in QuickBooks');
+    }
+
+    // Upsert Invoice record
+    const invoice = await prisma.invoice.upsert({
+      where: { externalId: qbInvoice.Id },
+      create: {
+        jobId,
+        externalId: qbInvoice.Id,
+        number: qbInvoice.DocNumber || null,
+        dueDate: qbInvoice.DueDate ? new Date(qbInvoice.DueDate) : dueDate,
+        totalAmount: new Decimal(qbInvoice.TotalAmt),
+        balance: new Decimal(qbInvoice.Balance),
+        status: 'OPEN',
+        publicUrl: null, // QuickBooks doesn't provide this in basic invoice response
+      },
+      update: {
+        number: qbInvoice.DocNumber || null,
+        dueDate: qbInvoice.DueDate ? new Date(qbInvoice.DueDate) : dueDate,
+        totalAmount: new Decimal(qbInvoice.TotalAmt),
+        balance: new Decimal(qbInvoice.Balance),
+        status: 'OPEN',
+      },
+    });
+
+    // Update JobFinancialSnapshot to link primary invoice
+    if (job.financialSnapshot) {
+      await prisma.jobFinancialSnapshot.update({
+        where: { jobId },
+        data: {
+          primaryInvoiceId: invoice.id,
+          invoiceDueDate: invoice.dueDate,
+        },
+      });
+    }
+
+    this.logger.log(`Invoice ${invoice.id} created for job ${jobId}`);
+
+    // Send email notification if requested (default true)
+    const shouldSendEmail = options?.sendEmail !== false;
+
+    if (shouldSendEmail) {
+      await this.sendInvoiceEmail(job, invoice);
+    }
+
+    return this.mapInvoiceToDTO(invoice);
+  }
+
+  /**
+   * Send invoice-issued email notification via CX Engine
+   */
+  private async sendInvoiceEmail(job: any, invoice: any): Promise<void> {
+    try {
+      const jobNumber = job.jobNimbusId || job.id;
+      const amount = invoice.totalAmount ? Number(invoice.totalAmount) : 0;
+      const formattedAmount = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(amount);
+
+      const formattedDueDate = invoice.dueDate
+        ? new Date(invoice.dueDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })
+        : 'N/A';
+
+      let body = `Your invoice for Job ${jobNumber} has been issued.\n\n`;
+      body += `Invoice Amount: ${formattedAmount}\n`;
+      body += `Due Date: ${formattedDueDate}\n\n`;
+
+      if (invoice.publicUrl) {
+        body += `You can view your invoice online here: ${invoice.publicUrl}\n\n`;
+      }
+
+      body += `If you have any questions, please contact our office.\n\n`;
+      body += `Thank you for your business!`;
+
+      await this.customerExperienceService.createMessageForJob(job.id, {
+        type: 'INVOICE_ISSUED',
+        channel: 'EMAIL',
+        source: 'SYSTEM',
+        title: `Invoice for Job ${jobNumber}`,
+        body,
+        sendEmail: true,
+      });
+
+      this.logger.log(`Invoice email sent for job ${job.id}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to send invoice email for job ${job.id}:`, error.message);
+      // Don't throw - invoice was created successfully, email is secondary
+    }
+  }
+
+  /**
+   * Map Invoice Prisma model to DTO
+   */
+  private mapInvoiceToDTO(invoice: any): InvoiceDTO {
+    return {
+      id: invoice.id,
+      jobId: invoice.jobId,
+      externalId: invoice.externalId,
+      number: invoice.number,
+      dueDate: invoice.dueDate ? invoice.dueDate.toISOString() : null,
+      totalAmount: invoice.totalAmount ? Number(invoice.totalAmount) : null,
+      balance: invoice.balance ? Number(invoice.balance) : null,
+      status: invoice.status,
+      publicUrl: invoice.publicUrl,
+      createdAt: invoice.createdAt.toISOString(),
+      updatedAt: invoice.updatedAt.toISOString(),
+    };
   }
 }
