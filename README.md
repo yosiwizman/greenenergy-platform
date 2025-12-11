@@ -841,6 +841,74 @@ ENABLE_PAYMENT_REMINDER_SMS="false"
 
 See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation (includes AR & aging sections).
 
+## 🔍 Production Readiness & Observability
+
+**Phase 8 Sprint 1**: Production-grade monitoring and observability infrastructure for system health, debugging, and reliability.
+
+**Features**:
+
+- ✅ **Structured Request Logging**: Machine-readable logs with correlation IDs for end-to-end request tracing
+- ✅ **Correlation IDs**: Unique `x-request-id` for every HTTP request (auto-generated or client-provided)
+- ✅ **Prometheus Metrics**: `/api/v1/metrics` endpoint exposing HTTP, cron, and service health metrics
+- ✅ **Ops Status API**: `/api/v1/ops/status` endpoint aggregating platform health (protected with internal API key)
+- ✅ **Internal Ops Dashboard**: `/ops` page in internal dashboard with real-time system status visualization
+- ✅ **Cron Job Monitoring**: Tracks last run timestamps for workflow engine, QB sync, and warranty checks
+- ✅ **External Service Health**: Config-based health checks for database, JobNimbus, QuickBooks, email, SMS
+- ✅ **Path Normalization**: Reduces metric cardinality by normalizing IDs in paths
+- ✅ **Test Coverage**: Unit tests for MetricsService and OpsStatusService
+
+**Structured Logging**:
+
+```json
+{
+  "type": "http_request",
+  "method": "GET",
+  "path": "/api/v1/jobs/abc-123",
+  "statusCode": 200,
+  "durationMs": 145,
+  "correlationId": "lm0x8f-3a4b9c1d2e5f",
+  "userAgent": "Mozilla/5.0...",
+  "ip": "192.168.1.100",
+  "jobId": "abc-123"
+}
+```
+
+**Prometheus Metrics**:
+
+- `http_requests_total{method,path,status_code}` - Total HTTP request count
+- `http_request_duration_ms{method,path,status_code}` - Request duration histogram
+- `cron_jobs_last_run_timestamp{job_name}` - Last successful cron run timestamp
+- `external_service_status{service_name}` - Service health (1=UP, 0=DOWN)
+- Default system metrics (CPU, memory, event loop, GC)
+
+**Usage with Prometheus**:
+
+```yaml
+scrape_configs:
+  - job_name: 'greenenergy-core-api'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['core-api:3000']
+    metrics_path: '/api/v1/metrics'
+```
+
+**Ops Dashboard** (`/ops`):
+
+- Overall system status banner (green=operational, amber=issues)
+- Core platform cards (API, database)
+- External services table with status badges and details
+- Scheduled jobs table with last run timestamps (absolute and relative)
+- Real-time health data (no-cache)
+
+**Future Enhancements** (Phase 8 Sprint 2+):
+- Active health checks for external services (with circuit breakers)
+- Persistent metrics with push to remote storage
+- Distributed tracing with OpenTelemetry
+- Log aggregation with structured log shipping
+- Custom business metrics (jobs completed, revenue)
+
+See **[Production Readiness & Observability](docs/19-production-readiness-and-observability.md)** for detailed documentation.
+
 ## 📈 Forecasting Dashboard
 
 **Phase 6 Sprint 1**: Executive-level forecasting dashboard providing deterministic cashflow and weighted pipeline projections.

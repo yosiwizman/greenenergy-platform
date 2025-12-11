@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { AccountingService } from './accounting.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 /**
  * AccountingTasks handles scheduled QuickBooks sync operations
@@ -12,7 +13,8 @@ export class AccountingTasks {
 
   constructor(
     private readonly accountingService: AccountingService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService
   ) {}
 
   /**
@@ -34,6 +36,9 @@ export class AccountingTasks {
     try {
       await this.accountingService.syncAllActiveJobsFromQuickbooks();
       this.logger.log('Scheduled QuickBooks sync completed successfully');
+
+      // Record successful cron run for monitoring
+      this.metricsService.setCronLastRunTimestamp('quickbooks_sync');
     } catch (error) {
       this.logger.error(
         'Failed during scheduled QuickBooks sync:',

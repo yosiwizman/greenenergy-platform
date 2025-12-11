@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { WarrantyService } from './warranty.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class WarrantyTasks {
@@ -9,7 +10,8 @@ export class WarrantyTasks {
 
   constructor(
     private readonly warrantyService: WarrantyService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService
   ) {}
 
   /**
@@ -24,6 +26,9 @@ export class WarrantyTasks {
     try {
       await this.warrantyService.processExpiringWarranties(days);
       this.logger.log('Expiring warranties check completed successfully');
+
+      // Record successful cron run for monitoring
+      this.metricsService.setCronLastRunTimestamp('warranty_expiry_check');
     } catch (error) {
       this.logger.error(
         `Failed processing expiring warranties (days=${days}):`,

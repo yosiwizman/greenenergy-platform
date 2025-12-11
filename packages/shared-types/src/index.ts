@@ -1156,3 +1156,26 @@ export interface ExecutiveDigestDTO {
 
   keyCounts: ExecutiveDigestKeyCountsDTO;
 }
+
+// Production Readiness & Observability Types (Phase 8 Sprint 1)
+export type ExternalServiceStatus = 'UP' | 'DOWN' | 'DEGRADED';
+
+export interface ExternalServiceHealthDTO {
+  name: string;         // e.g., 'database', 'jobnimbus', 'quickbooks', 'email', 'sms'
+  status: ExternalServiceStatus;
+  lastCheckedAt: string; // ISO timestamp
+  details?: string;
+}
+
+export interface CronJobStatusDTO {
+  name: string;
+  lastRunAt: string | null; // ISO timestamp or null if never run
+}
+
+export interface OpsStatusDTO {
+  generatedAt: string;   // ISO timestamp
+  coreApiHealthy: boolean;
+  databaseHealthy: boolean;
+  externalServices: ExternalServiceHealthDTO[];
+  latestCronRuns: CronJobStatusDTO[];
+}

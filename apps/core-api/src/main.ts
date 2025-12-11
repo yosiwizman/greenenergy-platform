@@ -1,8 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
+import { LoggingInterceptor } from './common/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Apply correlation ID middleware globally
+  app.use(new CorrelationIdMiddleware().use.bind(new CorrelationIdMiddleware()));
+
+  // Apply logging interceptor globally
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.setGlobalPrefix('api/v1');
 
