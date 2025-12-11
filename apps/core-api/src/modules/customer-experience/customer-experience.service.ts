@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
 import { AiOperationsService } from '../ai-ops/ai-operations.service';
+import { EmailNotificationService } from '../notifications/email-notification.service';
 import type {
   CustomerMessageDTO,
   CreateCustomerMessageInput,
@@ -11,7 +12,10 @@ import type {
 export class CustomerExperienceService {
   private readonly logger = new Logger(CustomerExperienceService.name);
 
-  constructor(private readonly aiOperationsService: AiOperationsService) {}
+  constructor(
+    private readonly aiOperationsService: AiOperationsService,
+    private readonly emailNotificationService: EmailNotificationService,
+  ) {}
 
   /**
    * Get all messages for a job, ordered by creation date (oldest first)
@@ -61,6 +65,14 @@ export class CustomerExperienceService {
     });
 
     this.logger.log(`Message ${message.id} created successfully`);
+
+    // Send email if requested and channel is EMAIL
+    const shouldSendEmail = input.channel === 'EMAIL' && input.sendEmail === true;
+
+    if (shouldSendEmail) {
+      await this.sendEmailForMessage(job, message);
+    }
+
     return this.mapToDTO(message);
   }
 
@@ -157,5 +169,63 @@ export class CustomerExperienceService {
     };
 
     return titles[type];
+  }
+
+  /**
+   * Send email for a message
+   */
+  private async sendEmailForMessage(job: any, message: any): Promise<void> {
+    // Try to get customer email from contacts (primary first) or CustomerUser
+    const customerEmail = await this.getCustomerEmailForJob(job.id);
+
+    if (!customerEmail) {
+      this.logger.warn(
+        `CustomerExperienceService.createMessageForJob: no customer email for job ${job.id}, skipping email send.`,
+      );
+      return;
+    }
+
+    const isAiGenerated = message.source === 'AI_SUGGESTED';
+
+    await this.emailNotificationService.sendCustomerMessageEmail({
+      toEmail: customerEmail,
+      jobId: job.id,
+      messageTitle: message.title,
+      messageBody: message.body,
+      isAiGenerated,
+    });
+  }
+
+  /**
+   * Get customer email for a job (from primary contact or first CustomerUser)
+   */
+  private async getCustomerEmailForJob(jobId: string): Promise<string | null> {
+    // First try to get primary contact email
+    const primaryContact = await prisma.contact.findFirst({
+      where: { jobId, isPrimary: true, email: { not: null } },
+      select: { email: true },
+    });
+
+    if (primaryContact?.email) {
+      return primaryContact.email;
+    }
+
+    // Fallback to any contact with email
+    const anyContact = await prisma.contact.findFirst({
+      where: { jobId, email: { not: null } },
+      select: { email: true },
+    });
+
+    if (anyContact?.email) {
+      return anyContact.email;
+    }
+
+    // Final fallback to CustomerUser
+    const customerUser = await prisma.customerUser.findFirst({
+      where: { jobId },
+      select: { email: true },
+    });
+
+    return customerUser?.email || null;
   }
 }

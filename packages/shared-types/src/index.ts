@@ -1012,4 +1012,5 @@ export interface CreateCustomerMessageInput {
   title: string;
   body: string;
   metadataJson?: Record<string, unknown>;
+  sendEmail?: boolean; // Phase 4 Sprint 2: trigger email sending (only for channel=EMAIL)
 }
