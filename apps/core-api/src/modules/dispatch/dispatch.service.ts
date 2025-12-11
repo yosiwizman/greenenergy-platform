@@ -56,9 +56,7 @@ export class DispatchService {
 
     // Generate recommendations for each job
     const recommendations = await Promise.all(
-      candidateJobs.map((job) =>
-        this.computeRecommendationForJob(job, subcontractors, targetDate),
-      ),
+      candidateJobs.map((job) => this.computeRecommendationForJob(job, subcontractors, targetDate))
     );
 
     // Calculate summary metrics
@@ -79,7 +77,7 @@ export class DispatchService {
    */
   async getRecommendationsForJob(
     jobId: string,
-    date?: Date,
+    date?: Date
   ): Promise<DispatchRecommendationDTO | null> {
     this.logger.log(`Computing dispatch recommendation for job: ${jobId}`);
 
@@ -142,10 +140,10 @@ export class DispatchService {
   async assignSubcontractorToJob(
     jobId: string,
     subcontractorId: string,
-    scheduledDate: Date,
+    scheduledDate: Date
   ): Promise<void> {
     this.logger.log(
-      `Assigning subcontractor ${subcontractorId} to job ${jobId} for ${scheduledDate.toISOString()}`,
+      `Assigning subcontractor ${subcontractorId} to job ${jobId} for ${scheduledDate.toISOString()}`
     );
 
     // Update job's scheduled date
@@ -175,9 +173,7 @@ export class DispatchService {
       });
     }
 
-    this.logger.log(
-      `Successfully assigned subcontractor ${subcontractorId} to job ${jobId}`,
-    );
+    this.logger.log(`Successfully assigned subcontractor ${subcontractorId} to job ${jobId}`);
   }
 
   /**
@@ -199,14 +195,7 @@ export class DispatchService {
           {
             scheduledDate: null,
             status: {
-              in: [
-                'APPROVED',
-                'SCHEDULED',
-                'IN_PROGRESS',
-                'SITE_SURVEY',
-                'DESIGN',
-                'PERMITTING',
-              ],
+              in: ['APPROVED', 'SCHEDULED', 'IN_PROGRESS', 'SITE_SURVEY', 'DESIGN', 'PERMITTING'],
             },
           },
         ],
@@ -245,7 +234,7 @@ export class DispatchService {
   private async computeRecommendationForJob(
     job: any,
     subcontractors: any[],
-    targetDate: Date,
+    targetDate: Date
   ): Promise<DispatchRecommendationDTO> {
     // Build job candidate DTO
     const jobCandidate: DispatchJobCandidateDTO = {
@@ -280,13 +269,11 @@ export class DispatchService {
 
     // Score all subcontractors for this job
     const scoredOptions = subcontractors.map((sub) =>
-      this.scoreSubcontractorForJob(sub, job, targetDate),
+      this.scoreSubcontractorForJob(sub, job, targetDate)
     );
 
     // Filter out null options (e.g., non-compliant or over capacity)
-    const validOptions = scoredOptions.filter(
-      (opt): opt is DispatchCrewOptionDTO => opt !== null,
-    );
+    const validOptions = scoredOptions.filter((opt): opt is DispatchCrewOptionDTO => opt !== null);
 
     // Sort by confidence (HIGH > MEDIUM > LOW) then by reasons count
     validOptions.sort((a, b) => {
@@ -318,7 +305,7 @@ export class DispatchService {
   private scoreSubcontractorForJob(
     subcontractor: any,
     job: any,
-    targetDate: Date,
+    targetDate: Date
   ): DispatchCrewOptionDTO | null {
     const reasons: DispatchRecommendationReason[] = [];
     let score = 50; // Base score
@@ -430,7 +417,7 @@ export class DispatchService {
    * Compute materials ETA status for a job
    */
   private computeMaterialsEtaStatus(
-    materialOrders: any[],
+    materialOrders: any[]
   ): 'ON_TRACK' | 'AT_RISK' | 'LATE' | 'UNKNOWN' {
     if (!materialOrders || materialOrders.length === 0) {
       return 'UNKNOWN';

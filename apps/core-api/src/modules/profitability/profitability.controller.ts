@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ProfitabilityService } from './profitability.service';
 import type {
   JobProfitabilityDTO,
@@ -35,7 +27,7 @@ export class ProfitabilityController {
   @Get('dashboard/jobs')
   async getDashboardJobs(
     @Query('profitabilityLevel') profitabilityLevel?: JobProfitabilityLevel,
-    @Query('riskLevel') riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH',
+    @Query('riskLevel') riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH'
   ): Promise<JobProfitabilityDTO[]> {
     const filter = {
       profitabilityLevel,
@@ -50,9 +42,7 @@ export class ProfitabilityController {
    * Get financial snapshot for a specific job
    */
   @Get('jobs/:jobId')
-  async getJobFinancialSnapshot(
-    @Param('jobId') jobId: string,
-  ): Promise<JobProfitabilityDTO> {
+  async getJobFinancialSnapshot(@Param('jobId') jobId: string): Promise<JobProfitabilityDTO> {
     return this.profitabilityService.getJobFinancialSnapshot(jobId);
   }
 

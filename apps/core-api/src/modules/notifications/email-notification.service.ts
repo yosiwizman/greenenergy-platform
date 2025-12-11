@@ -40,12 +40,10 @@ export class EmailNotificationService {
     } else {
       if (!apiKey || !this.fromEmail) {
         this.logger.warn(
-          'Email notifications not configured: RESEND_API_KEY or NOTIFICATIONS_FROM_EMAIL missing. Email sending disabled.',
+          'Email notifications not configured: RESEND_API_KEY or NOTIFICATIONS_FROM_EMAIL missing. Email sending disabled.'
         );
       } else if (this.provider.toLowerCase() !== 'resend') {
-        this.logger.warn(
-          `Unsupported email provider: ${this.provider}. Email sending disabled.`,
-        );
+        this.logger.warn(`Unsupported email provider: ${this.provider}. Email sending disabled.`);
       }
     }
   }
@@ -57,7 +55,7 @@ export class EmailNotificationService {
     // If email service is not configured, log and return without throwing
     if (!this.resendClient || !this.fromEmail) {
       this.logger.warn(
-        `Email service not configured - skipping email to ${params.toEmail} for job ${params.jobId}`,
+        `Email service not configured - skipping email to ${params.toEmail} for job ${params.jobId}`
       );
       return;
     }
@@ -66,7 +64,9 @@ export class EmailNotificationService {
       const subject = `Green Energy update for Job #${params.jobId}: ${params.messageTitle}`;
       const body = this.buildEmailBody(params);
 
-      this.logger.log(`Sending customer message email to ${params.toEmail} for job ${params.jobId}`);
+      this.logger.log(
+        `Sending customer message email to ${params.toEmail} for job ${params.jobId}`
+      );
 
       await this.resendClient.emails.send({
         from: this.fromEmail,
@@ -78,10 +78,7 @@ export class EmailNotificationService {
       this.logger.log(`Successfully sent email to ${params.toEmail} for job ${params.jobId}`);
     } catch (error) {
       // Log error but don't throw - we don't want email failures to break message creation
-      this.logger.error(
-        `Failed to send email to ${params.toEmail} for job ${params.jobId}`,
-        error,
-      );
+      this.logger.error(`Failed to send email to ${params.toEmail} for job ${params.jobId}`, error);
     }
   }
 
@@ -93,7 +90,7 @@ export class EmailNotificationService {
 
     if (!this.resendClient || !this.fromEmail) {
       this.logger.warn(
-        'EmailNotificationService.sendExecutiveDigestEmail: provider not configured or no from address',
+        'EmailNotificationService.sendExecutiveDigestEmail: provider not configured or no from address'
       );
       return;
     }
@@ -143,12 +140,7 @@ export class EmailNotificationService {
       lines.push('', '(This message was AI-assisted)');
     }
 
-    lines.push(
-      '',
-      '---',
-      'Green Energy Solar',
-      'Your trusted solar installation partner',
-    );
+    lines.push('', '---', 'Green Energy Solar', 'Your trusted solar installation partner');
 
     return lines.join('\n');
   }
@@ -198,7 +190,7 @@ export class EmailNotificationService {
     // Add aging buckets
     for (const bucket of digest.financeAgingSummary.buckets) {
       lines.push(
-        `${bucket.bucket}: $${bucket.outstanding.toLocaleString()} (${bucket.jobsCount} jobs)`,
+        `${bucket.bucket}: $${bucket.outstanding.toLocaleString()} (${bucket.jobsCount} jobs)`
       );
     }
 
@@ -215,14 +207,14 @@ export class EmailNotificationService {
       `  Weighted Pipeline: $${digest.forecastOverview.pipeline.totalWeightedAmount.toLocaleString()}`,
       `  Buckets: ${digest.forecastOverview.pipeline.buckets.length}`,
       '',
-      'Top 3 Pipeline Stages:',
+      'Top 3 Pipeline Stages:'
     );
 
     // Add top 3 pipeline buckets
     const topBuckets = digest.forecastOverview.pipeline.buckets.slice(0, 3);
     for (const bucket of topBuckets) {
       lines.push(
-        `  ${bucket.statusLabel}: $${bucket.weightedAmount.toLocaleString()} (${bucket.jobsCount} jobs)`,
+        `  ${bucket.statusLabel}: $${bucket.weightedAmount.toLocaleString()} (${bucket.jobsCount} jobs)`
       );
     }
 
@@ -232,7 +224,7 @@ export class EmailNotificationService {
       '─'.repeat(50),
       'Green Energy Solar',
       'Executive Dashboard: [Internal Dashboard URL]',
-      '',
+      ''
     );
 
     return lines.join('\n');

@@ -15,7 +15,7 @@ jest.mock('@greenenergy/db', () => ({
   },
 }));
 
-const { prisma } = require('@greenenergy/db');
+import { prisma } from '@greenenergy/db';
 
 describe('ExecutiveReportService', () => {
   let service: ExecutiveReportService;
@@ -67,7 +67,9 @@ describe('ExecutiveReportService', () => {
     financeService = module.get(FinanceService) as jest.Mocked<FinanceService>;
     forecastService = module.get(ForecastService) as jest.Mocked<ForecastService>;
     commandCenterService = module.get(CommandCenterService) as jest.Mocked<CommandCenterService>;
-    emailNotificationService = module.get(EmailNotificationService) as jest.Mocked<EmailNotificationService>;
+    emailNotificationService = module.get(
+      EmailNotificationService
+    ) as jest.Mocked<EmailNotificationService>;
     configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
   });
 
@@ -156,7 +158,9 @@ describe('ExecutiveReportService', () => {
       const mockArSummary = { jobsOverdue: 0 } as any;
       const mockAgingSummary = { buckets: [] } as any;
       const mockForecastOverview = { cashflow: {}, pipeline: {} } as any;
-      const mockCommandCenterOverview = { summary: { jobsHighRisk: 0, openSafetyIncidents: 0 } } as any;
+      const mockCommandCenterOverview = {
+        summary: { jobsHighRisk: 0, openSafetyIncidents: 0 },
+      } as any;
 
       financeService.getArSummary.mockResolvedValue(mockArSummary);
       financeService.getArAgingSummary.mockResolvedValue(mockAgingSummary);

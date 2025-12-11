@@ -105,7 +105,7 @@ export class ProfitabilityService {
    * List job financial snapshots with optional filtering
    */
   async listJobFinancialSnapshots(
-    filter?: ProfitDashboardJobFilter,
+    filter?: ProfitDashboardJobFilter
   ): Promise<JobProfitabilityDTO[]> {
     this.logger.log('Listing job financial snapshots with filter:', filter);
 
@@ -164,8 +164,7 @@ export class ProfitabilityService {
     }
 
     // Check if existing snapshot has QuickBooks data
-    const hasQuickbooksData =
-      job.financialSnapshot?.accountingSource === 'QUICKBOOKS';
+    const hasQuickbooksData = job.financialSnapshot?.accountingSource === 'QUICKBOOKS';
 
     // Determine contractAmount:
     // - If QuickBooks data exists, preserve it
@@ -174,7 +173,7 @@ export class ProfitabilityService {
     if (hasQuickbooksData && job.financialSnapshot) {
       contractAmount = job.financialSnapshot.contractAmount;
       this.logger.debug(
-        `Preserving QuickBooks contractAmount: $${contractAmount} for job ${jobId}`,
+        `Preserving QuickBooks contractAmount: $${contractAmount} for job ${jobId}`
       );
     } else {
       // For v1, use systemSize as a placeholder for contract amount if available
@@ -210,7 +209,7 @@ export class ProfitabilityService {
     // - Otherwise, mark as PLACEHOLDER
     const accountingSource = hasQuickbooksData ? 'QUICKBOOKS' : 'PLACEHOLDER';
     const accountingLastSyncAt = hasQuickbooksData
-      ? job.financialSnapshot?.accountingLastSyncAt ?? null
+      ? (job.financialSnapshot?.accountingLastSyncAt ?? null)
       : null;
 
     // Upsert snapshot

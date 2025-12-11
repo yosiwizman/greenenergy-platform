@@ -21,7 +21,7 @@ export class FinanceController {
 
   constructor(
     private readonly financeService: FinanceService,
-    private readonly accountingService: AccountingService,
+    private readonly accountingService: AccountingService
   ) {}
 
   /**
@@ -40,9 +40,7 @@ export class FinanceController {
    * Optional query param: ?status=OVERDUE|UNPAID|PARTIALLY_PAID|PAID
    */
   @Get('ar/jobs')
-  async listJobsWithArDetails(
-    @Query('status') status?: JobArStatus,
-  ): Promise<JobArDetailsDTO[]> {
+  async listJobsWithArDetails(@Query('status') status?: JobArStatus): Promise<JobArDetailsDTO[]> {
     this.logger.log(`GET /api/v1/finance/ar/jobs?status=${status || ''}`);
     return this.financeService.listJobsWithArDetails(status);
   }
@@ -84,7 +82,7 @@ export class FinanceController {
   @Post('ar/jobs/:jobId/invoices')
   async createInvoiceForJob(
     @Param('jobId') jobId: string,
-    @Body() body: { sendEmail?: boolean },
+    @Body() body: { sendEmail?: boolean }
   ): Promise<InvoiceDTO> {
     this.logger.log(`POST /api/v1/finance/ar/jobs/${jobId}/invoices`);
     return this.accountingService.createInvoiceForJob(jobId, {
@@ -99,7 +97,7 @@ export class FinanceController {
   @Get('ar/jobs/:jobId/invoices/:invoiceId')
   async getInvoiceForJob(
     @Param('jobId') jobId: string,
-    @Param('invoiceId') invoiceId: string,
+    @Param('invoiceId') invoiceId: string
   ): Promise<InvoiceDTO | null> {
     this.logger.log(`GET /api/v1/finance/ar/jobs/${jobId}/invoices/${invoiceId}`);
     return this.financeService.getInvoiceForJob(jobId, invoiceId);

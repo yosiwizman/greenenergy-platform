@@ -16,7 +16,7 @@ export class AccountingService {
 
   constructor(
     private readonly quickbooksClient: QuickbooksClient,
-    private readonly customerExperienceService: CustomerExperienceService,
+    private readonly customerExperienceService: CustomerExperienceService
   ) {}
 
   /**
@@ -66,7 +66,9 @@ export class AccountingService {
     const invoice = await this.quickbooksClient.fetchInvoiceByJobNumber(job.jobNimbusId);
 
     if (!invoice) {
-      this.logger.debug(`No QuickBooks invoice found for job ${jobId} (jobNumber: ${job.jobNimbusId})`);
+      this.logger.debug(
+        `No QuickBooks invoice found for job ${jobId} (jobNumber: ${job.jobNimbusId})`
+      );
 
       // If snapshot exists, mark as PLACEHOLDER; otherwise create one
       if (job.financialSnapshot) {
@@ -83,7 +85,9 @@ export class AccountingService {
     }
 
     // Invoice found! Use its TotalAmt as contractAmount
-    this.logger.log(`Found QuickBooks invoice for job ${jobId}: ${invoice.DocNumber} - $${invoice.TotalAmt}`);
+    this.logger.log(
+      `Found QuickBooks invoice for job ${jobId}: ${invoice.DocNumber} - $${invoice.TotalAmt}`
+    );
 
     const contractAmount = invoice.TotalAmt;
     const accountingSource = 'QUICKBOOKS';
@@ -201,7 +205,7 @@ export class AccountingService {
     }
 
     this.logger.log(
-      `Finished syncing all jobs from QuickBooks: ${successCount} succeeded, ${errorCount} failed`,
+      `Finished syncing all jobs from QuickBooks: ${successCount} succeeded, ${errorCount} failed`
     );
   }
 
@@ -212,7 +216,7 @@ export class AccountingService {
   private async syncPaymentsForJob(
     jobId: string,
     invoiceId: string,
-    qbPayments: any[],
+    qbPayments: any[]
   ): Promise<void> {
     this.logger.log(`Syncing ${qbPayments.length} payment(s) for job ${jobId}`);
 
@@ -220,7 +224,7 @@ export class AccountingService {
       // Find the line item that links to this specific invoice
       const invoiceLineAmount =
         qbPayment.Line?.find((line: any) =>
-          line.LinkedTxn?.some((txn: any) => txn.TxnId === invoiceId && txn.TxnType === 'Invoice'),
+          line.LinkedTxn?.some((txn: any) => txn.TxnId === invoiceId && txn.TxnType === 'Invoice')
         )?.Amount || qbPayment.TotalAmt;
 
       await prisma.payment.upsert({
@@ -267,7 +271,7 @@ export class AccountingService {
   private computeArStatus(
     amountPaid: number,
     amountOutstanding: number,
-    invoiceDueDate: Date | null,
+    invoiceDueDate: Date | null
   ): string {
     // OVERDUE takes precedence if due date is in the past
     if (invoiceDueDate && invoiceDueDate < new Date() && amountOutstanding > 0) {
@@ -327,10 +331,7 @@ export class AccountingService {
    * Create an invoice for a job in QuickBooks and persist it (Phase 5 Sprint 3)
    * Optionally sends email notification via CX Engine
    */
-  async createInvoiceForJob(
-    jobId: string,
-    options?: { sendEmail?: boolean },
-  ): Promise<InvoiceDTO> {
+  async createInvoiceForJob(jobId: string, options?: { sendEmail?: boolean }): Promise<InvoiceDTO> {
     this.logger.log(`Creating invoice for job ${jobId}`);
 
     // Load job with contacts and financial snapshot

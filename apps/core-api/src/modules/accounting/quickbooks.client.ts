@@ -55,7 +55,7 @@ export interface QuickbooksPayment {
 
 /**
  * QuickBooks Online API Client (v1.1 - read-only with OAuth2)
- * 
+ *
  * For v1.1, we use QuickbooksAuthService for token management:
  * - Automatic token refresh via OAuth2
  * - Job's jobNimbusId maps to QuickBooks Invoice.DocNumber
@@ -71,16 +71,19 @@ export class QuickbooksClient {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly authService: QuickbooksAuthService,
+    private readonly authService: QuickbooksAuthService
   ) {
-    this.baseUrl = this.configService.get<string>('QB_BASE_URL', 'https://quickbooks.api.intuit.com');
+    this.baseUrl = this.configService.get<string>(
+      'QB_BASE_URL',
+      'https://quickbooks.api.intuit.com'
+    );
     this.companyId = this.configService.get<string>('QB_COMPANY_ID', '');
 
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
       timeout: 10000,
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
     });
@@ -128,7 +131,7 @@ export class QuickbooksClient {
       const response = await this.httpClient.get(url, {
         params: { query },
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -147,15 +150,19 @@ export class QuickbooksClient {
       });
 
       const invoice = sortedInvoices[0];
-      this.logger.log(`Found QuickBooks invoice ${invoice.Id} (DocNumber: ${invoice.DocNumber}) for job ${jobNumber}`);
+      this.logger.log(
+        `Found QuickBooks invoice ${invoice.Id} (DocNumber: ${invoice.DocNumber}) for job ${jobNumber}`
+      );
 
       return invoice;
     } catch (error: any) {
       this.logger.error(`Failed to fetch QuickBooks invoice for job ${jobNumber}:`, error.message);
-      
+
       // Log more details for debugging
       if (error.response) {
-        this.logger.error(`QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        this.logger.error(
+          `QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
+        );
       }
 
       return null;
@@ -204,7 +211,7 @@ export class QuickbooksClient {
       const response = await this.httpClient.get(url, {
         params: { query },
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -218,11 +225,16 @@ export class QuickbooksClient {
       this.logger.log(`Found ${payments.length} payment(s) for invoice ${invoiceId}`);
       return payments;
     } catch (error: any) {
-      this.logger.error(`Failed to fetch QuickBooks payments for invoice ${invoiceId}:`, error.message);
-      
+      this.logger.error(
+        `Failed to fetch QuickBooks payments for invoice ${invoiceId}:`,
+        error.message
+      );
+
       // Log more details for debugging
       if (error.response) {
-        this.logger.error(`QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        this.logger.error(
+          `QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
+        );
       }
 
       return [];
@@ -292,7 +304,7 @@ export class QuickbooksClient {
       const url = `/v3/company/${this.companyId}/invoice`;
       const response = await this.httpClient.post(url, invoicePayload, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -310,7 +322,9 @@ export class QuickbooksClient {
 
       // Log more details for debugging
       if (error.response) {
-        this.logger.error(`QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        this.logger.error(
+          `QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
+        );
       }
 
       return null;

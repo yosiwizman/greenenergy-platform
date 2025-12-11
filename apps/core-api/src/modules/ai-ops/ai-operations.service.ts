@@ -84,7 +84,7 @@ export class AiOperationsService {
    */
   async generateCustomerMessage(
     jobId: string,
-    input: AiCustomerMessageRequestDTO,
+    input: AiCustomerMessageRequestDTO
   ): Promise<AiCustomerMessageDTO> {
     this.logger.log(`Generating ${input.type} customer message for job: ${jobId}`);
 
@@ -179,7 +179,9 @@ export class AiOperationsService {
     // Safety
     const openIncidents = jobData.safetyIncidents?.length || 0;
     if (openIncidents > 0) {
-      parts.push(`There ${openIncidents === 1 ? 'is' : 'are'} ${openIncidents} open safety incident${openIncidents > 1 ? 's' : ''} requiring follow-up`);
+      parts.push(
+        `There ${openIncidents === 1 ? 'is' : 'are'} ${openIncidents} open safety incident${openIncidents > 1 ? 's' : ''} requiring follow-up`
+      );
     }
 
     // Materials
@@ -240,7 +242,7 @@ export class AiOperationsService {
 
   private generateStatusSection(jobData: any): string {
     const daysSinceUpdate = Math.floor(
-      (Date.now() - new Date(jobData.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
+      (Date.now() - new Date(jobData.updatedAt).getTime()) / (1000 * 60 * 60 * 24)
     );
     return `Job is in ${jobData.status} status. Last updated ${daysSinceUpdate} day${daysSinceUpdate !== 1 ? 's' : ''} ago.`;
   }
@@ -268,12 +270,16 @@ export class AiOperationsService {
     const openIncidents = jobData.safetyIncidents?.length || 0;
     if (openIncidents > 0) {
       const highSeverity = jobData.safetyIncidents.filter(
-        (i: any) => i.severity === 'HIGH' || i.severity === 'CRITICAL',
+        (i: any) => i.severity === 'HIGH' || i.severity === 'CRITICAL'
       ).length;
       if (highSeverity > 0) {
-        parts.push(`${highSeverity} high-severity safety incident${highSeverity > 1 ? 's' : ''} require immediate attention`);
+        parts.push(
+          `${highSeverity} high-severity safety incident${highSeverity > 1 ? 's' : ''} require immediate attention`
+        );
       } else {
-        parts.push(`${openIncidents} open safety incident${openIncidents > 1 ? 's' : ''} to review`);
+        parts.push(
+          `${openIncidents} open safety incident${openIncidents > 1 ? 's' : ''} to review`
+        );
       }
     }
 
@@ -356,7 +362,7 @@ export class AiOperationsService {
 
     // Safety recommendations
     const criticalIncidents = jobData.safetyIncidents?.filter(
-      (i: any) => i.severity === 'CRITICAL' || i.severity === 'HIGH',
+      (i: any) => i.severity === 'CRITICAL' || i.severity === 'HIGH'
     );
     if (criticalIncidents && criticalIncidents.length > 0) {
       recommendations.push({
@@ -370,7 +376,7 @@ export class AiOperationsService {
 
     // Materials recommendations
     const lateOrders = (jobData.materialOrders || []).filter(
-      (o: any) => this.computeOrderEta(o) === 'LATE',
+      (o: any) => this.computeOrderEta(o) === 'LATE'
     );
     if (lateOrders.length > 0) {
       recommendations.push({
@@ -414,7 +420,7 @@ export class AiOperationsService {
 
   private generateGeneralRecommendation(
     jobData: any,
-    existingRecs: AiJobRecommendationDTO[],
+    existingRecs: AiJobRecommendationDTO[]
   ): AiJobRecommendationDTO {
     const hasHighPriority = existingRecs.some((r) => r.priority === 'HIGH');
 
@@ -431,7 +437,8 @@ export class AiOperationsService {
     return {
       id: 'maintain-momentum',
       label: 'Maintain Momentum',
-      description: 'Job is progressing well. Continue monitoring quality, safety, and schedule to ensure successful completion.',
+      description:
+        'Job is progressing well. Continue monitoring quality, safety, and schedule to ensure successful completion.',
       category: 'GENERAL',
       priority: 'LOW',
     };
@@ -460,22 +467,32 @@ export class AiOperationsService {
     }
   }
 
-  private buildStatusUpdateMessage(jobData: any, greeting: string, customerName: string, friendly: boolean): string {
+  private buildStatusUpdateMessage(
+    jobData: any,
+    greeting: string,
+    customerName: string,
+    friendly: boolean
+  ): string {
     const status = jobData.status.toLowerCase().replace('_', ' ');
     const closingLine = friendly
-      ? "We appreciate your patience and look forward to completing your project!"
-      : "Thank you for your continued cooperation.";
+      ? 'We appreciate your patience and look forward to completing your project!'
+      : 'Thank you for your continued cooperation.';
 
     const nextStep = this.getNextStep(jobData.status);
 
     return `${greeting} ${customerName},\n\nYour solar installation project is currently in ${status} status. ${nextStep}\n\n${closingLine}`;
   }
 
-  private buildEtaUpdateMessage(jobData: any, greeting: string, customerName: string, friendly: boolean): string {
+  private buildEtaUpdateMessage(
+    jobData: any,
+    greeting: string,
+    customerName: string,
+    friendly: boolean
+  ): string {
     const materials = jobData.materialOrders || [];
     const closingLine = friendly
       ? "Thank you for your patience! We're excited to complete your installation."
-      : "We appreciate your understanding.";
+      : 'We appreciate your understanding.';
 
     if (materials.length === 0) {
       return `${greeting} ${customerName},\n\nWe're currently working on scheduling your installation. We'll provide a timeline once all materials are confirmed.\n\n${closingLine}`;
@@ -493,9 +510,15 @@ export class AiOperationsService {
     return `${greeting} ${customerName},\n\nAll materials for your project have been received or are on schedule. We're coordinating with our installation team and will confirm your installation date shortly.\n\n${closingLine}`;
   }
 
-  private buildGenericMessage(jobData: any, input: AiCustomerMessageRequestDTO, greeting: string, customerName: string, friendly: boolean): string {
+  private buildGenericMessage(
+    jobData: any,
+    input: AiCustomerMessageRequestDTO,
+    greeting: string,
+    customerName: string,
+    friendly: boolean
+  ): string {
     const closingLine = friendly
-      ? "Feel free to reach out if you have any other questions!"
+      ? 'Feel free to reach out if you have any other questions!'
       : "Please don't hesitate to contact us with further questions.";
 
     const question = input.customQuestion || 'your inquiry';
@@ -508,7 +531,7 @@ export class AiOperationsService {
     const steps: Record<string, string> = {
       LEAD: 'Our team will contact you soon to schedule a site survey.',
       QUALIFIED: "We're preparing for your site survey.",
-      SITE_SURVEY: "Our team is conducting the site assessment.",
+      SITE_SURVEY: 'Our team is conducting the site assessment.',
       DESIGN: "We're designing your custom solar system.",
       PERMITTING: "We're working on securing the necessary permits.",
       APPROVED: 'All permits are approved. Installation will be scheduled soon.',

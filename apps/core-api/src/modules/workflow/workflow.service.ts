@@ -36,7 +36,7 @@ export class WorkflowService {
 
   constructor(
     private configService: ConfigService,
-    private customerExperienceService: CustomerExperienceService,
+    private customerExperienceService: CustomerExperienceService
   ) {
     const baseUrl = this.configService.get<string>('JOBNIMBUS_BASE_URL');
     const apiKey = this.configService.get<string>('JOBNIMBUS_API_KEY');
@@ -310,7 +310,9 @@ export class WorkflowService {
   /**
    * PRODUCTION: QC failed due to missing photos
    */
-  private async evaluateProductionQcFailPhotos(jobId: string): Promise<WorkflowActionLogDTO | null> {
+  private async evaluateProductionQcFailPhotos(
+    jobId: string
+  ): Promise<WorkflowActionLogDTO | null> {
     const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job || !job.jobNimbusId) return null;
 
@@ -351,7 +353,9 @@ export class WorkflowService {
   /**
    * PRODUCTION: Material delay affecting schedule
    */
-  private async evaluateProductionMaterialDelay(jobId: string): Promise<WorkflowActionLogDTO | null> {
+  private async evaluateProductionMaterialDelay(
+    jobId: string
+  ): Promise<WorkflowActionLogDTO | null> {
     const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job || !job.jobNimbusId) return null;
 
@@ -621,9 +625,7 @@ export class WorkflowService {
 
     // If no financial record or contract amount is 0 or source is PLACEHOLDER
     const hasMissingContract =
-      !financial ||
-      financial.contractAmount === 0 ||
-      financial.accountingSource === 'PLACEHOLDER';
+      !financial || financial.contractAmount === 0 || financial.accountingSource === 'PLACEHOLDER';
 
     if (!hasMissingContract) return null;
 
@@ -725,9 +727,7 @@ Your Green Energy Team
         sendEmail: true,
       });
 
-      this.logger.log(
-        `Payment reminder email sent for job ${jobId}`
-      );
+      this.logger.log(`Payment reminder email sent for job ${jobId}`);
     } catch (error) {
       this.logger.error(
         `Failed to send payment reminder email for job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
@@ -769,9 +769,7 @@ Your Green Energy Team
         const action = await rule.evaluate(jobId);
         if (action) {
           actions.push(action);
-          this.logger.log(
-            `Rule ${rule.key} triggered for job ${jobId}: ${rule.name}`
-          );
+          this.logger.log(`Rule ${rule.key} triggered for job ${jobId}: ${rule.name}`);
         }
       } catch (error) {
         this.logger.error(

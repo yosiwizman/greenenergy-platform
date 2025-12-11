@@ -72,7 +72,7 @@ describe('AccountingService', () => {
       (prisma.job.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.syncJobFromQuickbooks('non-existent-id')).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
 
@@ -308,7 +308,7 @@ describe('AccountingService', () => {
       (prisma.job.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.createInvoiceForJob('non-existent-id')).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
 
@@ -446,7 +446,7 @@ describe('AccountingService', () => {
       (quickbooksClient.createInvoice as jest.Mock).mockResolvedValue(null);
 
       await expect(service.createInvoiceForJob('job1')).rejects.toThrow(
-        'Failed to create invoice in QuickBooks',
+        'Failed to create invoice in QuickBooks'
       );
 
       expect(prisma.invoice.upsert).not.toHaveBeenCalled();

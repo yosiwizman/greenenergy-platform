@@ -22,7 +22,7 @@ export class ExecutiveReportService {
     private readonly forecastService: ForecastService,
     private readonly commandCenterService: CommandCenterService,
     private readonly emailNotificationService: EmailNotificationService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   /**
@@ -32,7 +32,7 @@ export class ExecutiveReportService {
     // Get the start of the previous week (Monday)
     const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
     const previousWeekStart = subWeeks(currentWeekStart, 1);
-    
+
     // Get the end of the previous week (Sunday)
     const previousWeekEnd = endOfWeek(previousWeekStart, { weekStartsOn: 1 });
 
@@ -51,16 +51,20 @@ export class ExecutiveReportService {
     const { periodStart, periodEnd } = this.getDigestPeriod(now);
 
     // Fetch data from all services in parallel
-    const [arSummary, agingSummary, forecastOverview, commandCenterOverview] =
-      await Promise.all([
-        this.financeService.getArSummary(),
-        this.financeService.getArAgingSummary(),
-        this.forecastService.getForecastOverview(12),
-        this.commandCenterService.getOverview(),
-      ]);
+    const [arSummary, agingSummary, forecastOverview, commandCenterOverview] = await Promise.all([
+      this.financeService.getArSummary(),
+      this.financeService.getArAgingSummary(),
+      this.forecastService.getForecastOverview(12),
+      this.commandCenterService.getOverview(),
+    ]);
 
     // Compute key counts
-    const keyCounts = await this.computeKeyCounts(periodStart, periodEnd, commandCenterOverview, arSummary);
+    const keyCounts = await this.computeKeyCounts(
+      periodStart,
+      periodEnd,
+      commandCenterOverview,
+      arSummary
+    );
 
     return {
       generatedAt: new Date().toISOString(),
@@ -80,7 +84,7 @@ export class ExecutiveReportService {
     periodStart: Date,
     periodEnd: Date,
     commandCenterOverview: any,
-    arSummary: any,
+    arSummary: any
   ): Promise<ExecutiveDigestKeyCountsDTO> {
     // High risk jobs (current snapshot)
     const highRiskJobs = commandCenterOverview.summary.jobsHighRisk || 0;
@@ -114,7 +118,7 @@ export class ExecutiveReportService {
    */
   async sendWeeklyDigest(
     now = new Date(),
-    options?: { recipientsOverride?: string[] },
+    options?: { recipientsOverride?: string[] }
   ): Promise<void> {
     this.logger.log('Sending weekly executive digest');
 
@@ -132,7 +136,7 @@ export class ExecutiveReportService {
 
     if (!recipientsEnv.length) {
       this.logger.warn(
-        'ExecutiveReportService.sendWeeklyDigest: no EXEC_DIGEST_RECIPIENTS configured',
+        'ExecutiveReportService.sendWeeklyDigest: no EXEC_DIGEST_RECIPIENTS configured'
       );
       return;
     }

@@ -14,7 +14,7 @@ export class CustomerExperienceService {
 
   constructor(
     private readonly aiOperationsService: AiOperationsService,
-    private readonly emailNotificationService: EmailNotificationService,
+    private readonly emailNotificationService: EmailNotificationService
   ) {}
 
   /**
@@ -42,7 +42,7 @@ export class CustomerExperienceService {
    */
   async createMessageForJob(
     jobId: string,
-    input: CreateCustomerMessageInput,
+    input: CreateCustomerMessageInput
   ): Promise<CustomerMessageDTO> {
     this.logger.log(`Creating message for job ${jobId}, type: ${input.type}`);
 
@@ -60,7 +60,7 @@ export class CustomerExperienceService {
         source: input.source || 'HUMAN',
         title: input.title,
         body: input.body,
-      metadataJson: (input.metadataJson as any) ?? null,
+        metadataJson: (input.metadataJson as any) ?? null,
       },
     });
 
@@ -104,11 +104,9 @@ export class CustomerExperienceService {
       messageType: CustomerMessageType;
       tone?: 'FRIENDLY' | 'FORMAL';
       customPrompt?: string;
-    },
+    }
   ): Promise<CustomerMessageDTO> {
-    this.logger.log(
-      `Creating AI-generated ${params.messageType} message for job: ${jobId}`,
-    );
+    this.logger.log(`Creating AI-generated ${params.messageType} message for job: ${jobId}`);
 
     // Only AI message types are supported (not PAYMENT_REMINDER)
     const aiMessageType = params.messageType as any; // Cast for now since AI doesn't support PAYMENT_REMINDER
@@ -185,7 +183,7 @@ export class CustomerExperienceService {
 
     if (!customerEmail) {
       this.logger.warn(
-        `CustomerExperienceService.createMessageForJob: no customer email for job ${job.id}, skipping email send.`,
+        `CustomerExperienceService.createMessageForJob: no customer email for job ${job.id}, skipping email send.`
       );
       return;
     }
