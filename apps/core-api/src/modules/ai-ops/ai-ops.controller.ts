@@ -5,6 +5,9 @@ import type {
   AiJobRecommendationDTO,
   AiCustomerMessageDTO,
   AiCustomerMessageRequestDTO,
+  AiOpsLlmJobSummaryDTO,
+  AiOpsLlmCustomerMessageInputDTO,
+  AiOpsLlmCustomerMessageDTO,
 } from '@greenenergy/shared-types';
 
 @Controller('api/v1/ai-ops')
@@ -52,5 +55,34 @@ export class AiOpsController {
     @Body() input: AiCustomerMessageRequestDTO
   ): Promise<AiCustomerMessageDTO> {
     return this.aiOpsService.generateCustomerMessage(jobId, input);
+  }
+
+  /**
+   * POST /api/v1/ai-ops/jobs/:jobId/summary/llm
+   * Generate LLM-powered job summary (Phase 10 Sprint 1)
+   * Falls back to rule-based summary if LLM is disabled or unavailable
+   */
+  @Post('jobs/:jobId/summary/llm')
+  @HttpCode(HttpStatus.OK)
+  async getLlmJobSummary(@Param('jobId') jobId: string): Promise<AiOpsLlmJobSummaryDTO> {
+    return this.aiOpsService.generateJobSummaryWithLlm(jobId);
+  }
+
+  /**
+   * POST /api/v1/ai-ops/jobs/:jobId/customer-message/llm
+   * Generate LLM-powered customer message draft (Phase 10 Sprint 1)
+   * Falls back to template-based message if LLM is disabled or unavailable
+   */
+  @Post('jobs/:jobId/customer-message/llm')
+  @HttpCode(HttpStatus.OK)
+  async getLlmCustomerMessage(
+    @Param('jobId') jobId: string,
+    @Body() body: { tone?: 'friendly' | 'formal' | 'direct'; context?: string }
+  ): Promise<AiOpsLlmCustomerMessageDTO> {
+    return this.aiOpsService.generateCustomerMessageWithLlm({
+      jobId,
+      tone: body?.tone,
+      context: (body?.context as any) ?? 'general_update',
+    });
   }
 }
