@@ -138,18 +138,18 @@ NEXT_PUBLIC_API_BASE_URL=https://api-greenenergy.up.railway.app/api/v1
 NEXT_PUBLIC_INTERNAL_API_KEY=your-secure-internal-api-key
 ```
 
-### 3.4 Smoke Tests (Local)
+### 3.4 Smoke Tests (Local & CI)
 
 After deployment, set these in your **local `.env`** file (or in your shell) to run smoke tests:
 
 ```bash
-STAGING_API_BASE_URL=https://api-greenenergy.up.railway.app
-STAGING_INTERNAL_DASHBOARD_URL=https://dashboard.yourdomain.com
-STAGING_CUSTOMER_PORTAL_URL=https://portal.yourdomain.com
+STAGING_CORE_API_BASE_URL=https://api-greenenergy.up.railway.app
+STAGING_INTERNAL_DASHBOARD_BASE_URL=https://dashboard.yourdomain.com
+STAGING_CUSTOMER_PORTAL_BASE_URL=https://portal.yourdomain.com
 STAGING_INTERNAL_API_KEY=your-secure-internal-api-key
 ```
 
-**Important**: These variables are used by the smoke test script running on your local machine. They point to your deployed staging/production URLs.
+**Important**: These variables are used by the smoke test script running on your local machine or in GitHub Actions CI. They point to your deployed staging/production URLs. For CI, these are configured as GitHub Secrets.
 
 ---
 
@@ -253,13 +253,15 @@ STAGING_INTERNAL_API_KEY=your-secure-internal-api-key
 On your **local development machine**, add these to your `.env` file (or set them in your shell):
 
 ```bash
-STAGING_API_BASE_URL=https://greenenergy-production.up.railway.app
-STAGING_INTERNAL_DASHBOARD_URL=https://greenenergy-internal-dashboard-staging.vercel.app
-STAGING_CUSTOMER_PORTAL_URL=https://greenenergy-customer-portal-staging.vercel.app
+STAGING_CORE_API_BASE_URL=https://greenenergy-production.up.railway.app
+STAGING_INTERNAL_DASHBOARD_BASE_URL=https://greenenergy-internal-dashboard-staging.vercel.app
+STAGING_CUSTOMER_PORTAL_BASE_URL=https://greenenergy-customer-portal-staging.vercel.app
 STAGING_INTERNAL_API_KEY=your-secure-internal-api-key
 ```
 
 **Replace** the URLs with your actual deployed URLs from steps 4.2, 4.4, and 4.5.
+
+**For CI/CD**: These same variables should be set as **GitHub Secrets** for automated smoke tests (see docs/20-release-and-staging-playbook.md).
 
 ### 4.7 Run Smoke Tests
 

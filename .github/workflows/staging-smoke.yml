@@ -1,0 +1,49 @@
+name: Staging Smoke Tests
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 9 * * *' # Daily at 09:00 UTC
+
+jobs:
+  smoke-staging:
+    name: Run Staging Smoke Tests
+    runs-on: ubuntu-latest
+
+    env:
+      STAGING_CORE_API_BASE_URL: ${{ secrets.STAGING_CORE_API_BASE_URL }}
+      STAGING_INTERNAL_DASHBOARD_BASE_URL: ${{ secrets.STAGING_INTERNAL_DASHBOARD_BASE_URL }}
+      STAGING_CUSTOMER_PORTAL_BASE_URL: ${{ secrets.STAGING_CUSTOMER_PORTAL_BASE_URL }}
+      STAGING_INTERNAL_API_KEY: ${{ secrets.STAGING_INTERNAL_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run staging smoke tests
+        run: pnpm smoke:staging

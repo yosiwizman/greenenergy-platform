@@ -1027,9 +1027,9 @@ EXEC_DIGEST_RECIPIENTS="owner@yourdomain.com,partner@yourdomain.com"
 
 See **[Executive Digest & Reporting](docs/18-executive-digest-and-reporting.md)** for detailed documentation.
 
-## 🚀 Deployment & Environments
+## 🚀 Deployment & Operations
 
-**Phase 3 Sprint 3 & 8**: Production-ready deployment strategy with automated smoke tests for operational readiness.
+**Phase 3 Sprint 3, Sprint 8 & Phase 9 Sprint 1**: Production-ready deployment strategy with automated smoke tests, CI/CD staging pipeline, and operational readiness playbook.
 
 **Architecture**:
 - **Frontends**: `customer-portal` and `internal-dashboard` deployed to Vercel
@@ -1037,35 +1037,52 @@ See **[Executive Digest & Reporting](docs/18-executive-digest-and-reporting.md)*
 - **Database**: PostgreSQL 15 on Railway
 - **External Integrations**: JobNimbus API, QuickBooks OAuth2
 
-**Deployment Guides**:
-- **Vercel**: Step-by-step setup for both Next.js apps with environment variables
-- **Railway**: Docker-based deployment with PostgreSQL provisioning
-- **Environment Variables**: Comprehensive `.env.example` files for all services
-- **Rollout Strategy**: Pre-deployment checklist, testing, and rollback procedures
+**Environments**:
+- **Local**: Docker-based PostgreSQL + local dev servers
+- **Staging**: Railway + Vercel (test credentials, automated smoke tests)
+- **Production**: Railway + Vercel (live credentials, custom domains)
 
-**Staging Smoke Tests** (Sprint 8):
+**Staging Smoke Tests** (Local & CI):
 
-After deploying to staging/production, run automated health checks:
+After deploying to staging, run automated health checks:
 
 ```bash
-# 1. Set environment variables in .env or shell:
-STAGING_API_BASE_URL=https://your-api.railway.app
-STAGING_INTERNAL_DASHBOARD_URL=https://your-dashboard.vercel.app
-STAGING_CUSTOMER_PORTAL_URL=https://your-portal.vercel.app
+# 1. Set environment variables in .env or as GitHub Secrets:
+STAGING_CORE_API_BASE_URL=https://your-staging-api.railway.app
+STAGING_INTERNAL_DASHBOARD_BASE_URL=https://your-staging-dashboard.vercel.app
+STAGING_CUSTOMER_PORTAL_BASE_URL=https://your-staging-portal.vercel.app
 STAGING_INTERNAL_API_KEY=your-internal-api-key
 
-# 2. Run smoke tests:
+# 2. Run smoke tests locally:
 pnpm smoke:staging
+
+# Or trigger via GitHub Actions:
+# Go to Actions → Staging Smoke Tests → Run workflow
 ```
 
 The smoke test script validates:
-- ✅ API health endpoint
+- ✅ API health endpoint (`/health`)
 - ✅ Command Center Overview API (with internal auth)
 - ✅ Workflow Rules API
 - ✅ Internal Dashboard pages (command-center, workflows)
 - ✅ Customer Portal root page
 
 All checks must pass before proceeding with manual verification.
+
+**GitHub Actions CI/CD**:
+- **Standard CI** (`.github/workflows/ci.yml`): Runs on every push/PR (install, lint, test, build)
+- **Staging Smoke Tests** (`.github/workflows/staging-smoke.yml`): Runs daily at 09:00 UTC and on-demand
+- Environment variables stored as **GitHub Secrets** for automated testing
+
+**Release Checklist v1**:
+
+Before deploying to production:
+- [ ] All CI checks pass (lint, test, build)
+- [ ] Deployed to staging
+- [ ] Staging smoke tests pass (`pnpm smoke:staging` ✅)
+- [ ] `/ops` dashboard shows all services UP
+- [ ] Manual UI verification completed
+- [ ] Database migrations applied
 
 **Cost Estimates**:
 - Vercel Hobby: $0/month (2 projects, 100GB bandwidth)
@@ -1078,10 +1095,14 @@ All checks must pass before proceeding with manual verification.
 - `.env.example` - Consolidated environment variables for all services
 - `apps/internal-dashboard/.env.example` - Dashboard-specific env vars
 - `tools/smoke-tests/` - Staging smoke test harness
+- `.github/workflows/ci.yml` - Standard CI pipeline
+- `.github/workflows/staging-smoke.yml` - Staging smoke test automation
 
 **Documentation**:
-- **[Deployment & Environments Guide](docs/11-deployment-and-environments.md)** - Complete deployment instructions, troubleshooting, and best practices
+- **[Release & Staging Playbook](docs/20-release-and-staging-playbook.md)** - **⭐ START HERE** - Complete operational playbook with staging deployment, GitHub Secrets setup, smoke tests, and release checklist
+- **[Deployment & Environments Guide](docs/11-deployment-and-environments.md)** - Detailed deployment instructions, troubleshooting, and best practices
 - **[Staging Smoke Tests & Go-Live Checklist](docs/16-staging-smoke-tests-and-go-live-checklist.md)** - Operational readiness playbook with smoke tests and troubleshooting
+- **[Production Readiness & Observability](docs/19-production-readiness-and-observability.md)** - Metrics, logging, and ops dashboard
 
 ## 🤖 Workflow Automation Engine
 

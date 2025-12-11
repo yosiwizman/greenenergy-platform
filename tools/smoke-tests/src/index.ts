@@ -8,9 +8,9 @@
  * 
  * Usage:
  *   1. Set environment variables:
- *      - STAGING_API_BASE_URL
- *      - STAGING_INTERNAL_DASHBOARD_URL
- *      - STAGING_CUSTOMER_PORTAL_URL
+ *      - STAGING_CORE_API_BASE_URL
+ *      - STAGING_INTERNAL_DASHBOARD_BASE_URL
+ *      - STAGING_CUSTOMER_PORTAL_BASE_URL
  *      - STAGING_INTERNAL_API_KEY
  *   2. Run: pnpm smoke:staging
  */
@@ -32,9 +32,9 @@ class SmokeTestRunner {
 
   constructor() {
     // Validate required environment variables
-    this.apiBaseUrl = process.env.STAGING_API_BASE_URL || '';
-    this.internalDashboardUrl = process.env.STAGING_INTERNAL_DASHBOARD_URL || '';
-    this.customerPortalUrl = process.env.STAGING_CUSTOMER_PORTAL_URL || '';
+    this.apiBaseUrl = process.env.STAGING_CORE_API_BASE_URL || '';
+    this.internalDashboardUrl = process.env.STAGING_INTERNAL_DASHBOARD_BASE_URL || '';
+    this.customerPortalUrl = process.env.STAGING_CUSTOMER_PORTAL_BASE_URL || '';
     this.internalApiKey = process.env.STAGING_INTERNAL_API_KEY || '';
 
     this.validateEnvironment();
@@ -43,16 +43,16 @@ class SmokeTestRunner {
   private validateEnvironment(): void {
     const missing: string[] = [];
 
-    if (!this.apiBaseUrl) missing.push('STAGING_API_BASE_URL');
-    if (!this.internalDashboardUrl) missing.push('STAGING_INTERNAL_DASHBOARD_URL');
-    if (!this.customerPortalUrl) missing.push('STAGING_CUSTOMER_PORTAL_URL');
+    if (!this.apiBaseUrl) missing.push('STAGING_CORE_API_BASE_URL');
+    if (!this.internalDashboardUrl) missing.push('STAGING_INTERNAL_DASHBOARD_BASE_URL');
+    if (!this.customerPortalUrl) missing.push('STAGING_CUSTOMER_PORTAL_BASE_URL');
     if (!this.internalApiKey) missing.push('STAGING_INTERNAL_API_KEY');
 
     if (missing.length > 0) {
       console.error('❌ Missing required environment variables:');
       missing.forEach(varName => console.error(`   - ${varName}`));
-      console.error('\nPlease set these variables in your .env file or environment.');
-      console.error('See docs/16-staging-smoke-tests-and-go-live-checklist.md for details.\n');
+      console.error('\nPlease set these variables in your .env file or as GitHub Secrets (for CI).');
+      console.error('See docs/20-release-and-staging-playbook.md for setup instructions.\n');
       process.exit(1);
     }
   }

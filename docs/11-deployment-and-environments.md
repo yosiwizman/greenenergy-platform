@@ -447,16 +447,16 @@ After deployment, run smoke tests to verify critical endpoints and pages:
 
 ```bash
 # Set environment variables (in .env or shell)
-STAGING_API_BASE_URL=https://your-api.railway.app
-STAGING_INTERNAL_DASHBOARD_URL=https://your-dashboard.vercel.app
-STAGING_CUSTOMER_PORTAL_URL=https://your-portal.vercel.app
+STAGING_CORE_API_BASE_URL=https://your-api.railway.app
+STAGING_INTERNAL_DASHBOARD_BASE_URL=https://your-dashboard.vercel.app
+STAGING_CUSTOMER_PORTAL_BASE_URL=https://your-portal.vercel.app
 STAGING_INTERNAL_API_KEY=your-internal-api-key
 
 # Run smoke tests
 pnpm smoke:staging
 ```
 
-See **[Staging Smoke Tests & Go-Live Checklist](./16-staging-smoke-tests-and-go-live-checklist.md)** for:
+See **[Staging Smoke Tests & Go-Live Checklist](./16-staging-smoke-tests-and-go-live-checklist.md)** and **[Release & Staging Playbook](./20-release-and-staging-playbook.md)** for:
 - Complete go-live checklist
 - Step-by-step deployment flow
 - Smoke test details and customization
