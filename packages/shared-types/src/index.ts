@@ -792,6 +792,50 @@ export type JobProfitabilityLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 // Accounting Integration Types (Phase 3 Sprint 1)
 export type AccountingSource = 'PLACEHOLDER' | 'QUICKBOOKS' | 'MANUAL';
 
+// AR & Finance Types (Phase 5 Sprint 1)
+export type JobArStatus = 'PAID' | 'PARTIALLY_PAID' | 'UNPAID' | 'OVERDUE';
+
+export type PaymentMethod = 'CREDIT_CARD' | 'CHECK' | 'ACH' | 'WIRE' | 'OTHER';
+
+export type PaymentStatus = 'APPLIED' | 'PENDING' | 'REVERSED';
+
+export interface PaymentDTO {
+  id: string;
+  jobId: string;
+  externalId: string;
+  externalInvoiceId?: string | null;
+  amount: number;
+  receivedAt: string; // ISO string
+  paymentMethod?: PaymentMethod | null;
+  status: PaymentStatus;
+  referenceNumber?: string | null;
+  notes?: string | null;
+}
+
+export interface JobArDetailsDTO {
+  jobId: string;
+  jobNumber?: string | null;
+  customerName?: string | null;
+  status: string;
+  contractAmount: number;
+  amountPaid: number;
+  amountOutstanding: number;
+  arStatus: JobArStatus;
+  lastPaymentAt?: string | null; // ISO string
+  invoiceDueDate?: string | null; // ISO string
+  payments: PaymentDTO[];
+}
+
+export interface ArSummaryDTO {
+  totalOutstanding: number;
+  totalPaid: number;
+  totalContractValue: number;
+  jobsPaid: number;
+  jobsPartiallyPaid: number;
+  jobsUnpaid: number;
+  jobsOverdue: number;
+}
+
 export interface JobProfitabilityDTO {
   jobId: string;
   jobNumber?: string | null;

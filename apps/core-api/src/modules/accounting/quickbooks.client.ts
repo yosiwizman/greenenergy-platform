@@ -11,6 +11,7 @@ export interface QuickbooksInvoice {
   DocNumber: string;
   TotalAmt: number;
   Balance: number;
+  DueDate?: string;
   TxnDate: string;
   CustomerRef?: {
     value: string;
@@ -20,6 +21,36 @@ export interface QuickbooksInvoice {
     value: string;
   };
   LastUpdatedTime?: string;
+  LinkedTxn?: Array<{
+    TxnId: string;
+    TxnType: string;
+  }>;
+}
+
+/**
+ * Minimal QuickBooks Payment structure
+ */
+export interface QuickbooksPayment {
+  Id: string;
+  TotalAmt: number;
+  TxnDate: string;
+  PaymentMethodRef?: {
+    value: string;
+    name?: string;
+  };
+  PaymentRefNum?: string;
+  CustomerRef?: {
+    value: string;
+    name?: string;
+  };
+  PrivateNote?: string;
+  Line?: Array<{
+    Amount: number;
+    LinkedTxn?: Array<{
+      TxnId: string;
+      TxnType: string;
+    }>;
+  }>;
 }
 
 /**
@@ -137,6 +168,65 @@ export class QuickbooksClient {
   private escapeQuickbooksQuery(value: string): string {
     // Escape single quotes by doubling them
     return value.replace(/'/g, "''");
+  }
+
+  /**
+   * Fetch payments linked to a specific invoice
+   * Returns empty array if disabled, not found, or on error
+   */
+  async fetchPaymentsForInvoice(invoiceId: string): Promise<QuickbooksPayment[]> {
+    if (!this.authService.isEnabled()) {
+      this.logger.debug(`QuickBooks disabled, skipping payment fetch for invoice: ${invoiceId}`);
+      return [];
+    }
+
+    if (!this.companyId) {
+      this.logger.warn('QuickBooks credentials missing (QB_COMPANY_ID), cannot fetch payments');
+      return [];
+    }
+
+    if (!invoiceId) {
+      this.logger.debug('No invoice ID provided, cannot fetch payments');
+      return [];
+    }
+
+    try {
+      this.logger.log(`Fetching QuickBooks payments for invoice: ${invoiceId}`);
+
+      // Get access token from auth service
+      const accessToken = await this.authService.getAccessToken();
+
+      // Query payments linked to this invoice
+      // QuickBooks API: Payments are linked via Line.LinkedTxn where TxnType='Invoice'
+      const query = `SELECT * FROM Payment WHERE Line.LinkedTxn.TxnId = '${this.escapeQuickbooksQuery(invoiceId)}'`;
+      const url = `/v3/company/${this.companyId}/query`;
+
+      const response = await this.httpClient.get(url, {
+        params: { query },
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      const payments = response.data?.QueryResponse?.Payment || [];
+
+      if (payments.length === 0) {
+        this.logger.debug(`No QuickBooks payments found for invoice: ${invoiceId}`);
+        return [];
+      }
+
+      this.logger.log(`Found ${payments.length} payment(s) for invoice ${invoiceId}`);
+      return payments;
+    } catch (error: any) {
+      this.logger.error(`Failed to fetch QuickBooks payments for invoice ${invoiceId}:`, error.message);
+      
+      // Log more details for debugging
+      if (error.response) {
+        this.logger.error(`QuickBooks API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      }
+
+      return [];
+    }
   }
 
   /**

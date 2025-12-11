@@ -104,6 +104,20 @@ export class AccountingService {
     const riskLevel = job.riskSnapshot?.riskLevel || null;
     const schedulingRisk = job.financialSnapshot?.schedulingRisk ?? null;
 
+    // Sync payments for this invoice (Phase 5 Sprint 1)
+    const payments = await this.quickbooksClient.fetchPaymentsForInvoice(invoice.Id);
+    await this.syncPaymentsForJob(jobId, invoice.Id, payments);
+
+    // Compute AR fields
+    const amountPaid = payments.reduce((sum, p) => sum + p.TotalAmt, 0);
+    const amountOutstanding = Math.max(0, contractAmount - amountPaid);
+    const invoiceDueDate = invoice.DueDate ? new Date(invoice.DueDate) : null;
+    const lastPaymentAt =
+      payments.length > 0
+        ? new Date(Math.max(...payments.map((p) => new Date(p.TxnDate).getTime())))
+        : null;
+    const arStatus = this.computeArStatus(amountPaid, amountOutstanding, invoiceDueDate);
+
     // Upsert snapshot
     const snapshot = await prisma.jobFinancialSnapshot.upsert({
       where: { jobId },
@@ -119,6 +133,11 @@ export class AccountingService {
         schedulingRisk,
         accountingSource,
         accountingLastSyncAt,
+        amountPaid,
+        amountOutstanding,
+        arStatus,
+        invoiceDueDate,
+        lastPaymentAt,
       },
       update: {
         contractAmount,
@@ -126,8 +145,12 @@ export class AccountingService {
         marginPercent,
         accountingSource,
         accountingLastSyncAt,
-        // Preserve existing costs and risk fields
         riskLevel,
+        amountPaid,
+        amountOutstanding,
+        arStatus,
+        invoiceDueDate,
+        lastPaymentAt,
       },
     });
 
@@ -177,6 +200,89 @@ export class AccountingService {
   }
 
   /**
+   * Sync payments from QuickBooks to database (Phase 5 Sprint 1)
+   * Creates or updates Payment records for a given job and invoice
+   */
+  private async syncPaymentsForJob(
+    jobId: string,
+    invoiceId: string,
+    qbPayments: any[],
+  ): Promise<void> {
+    this.logger.log(`Syncing ${qbPayments.length} payment(s) for job ${jobId}`);
+
+    for (const qbPayment of qbPayments) {
+      // Find the line item that links to this specific invoice
+      const invoiceLineAmount =
+        qbPayment.Line?.find((line: any) =>
+          line.LinkedTxn?.some((txn: any) => txn.TxnId === invoiceId && txn.TxnType === 'Invoice'),
+        )?.Amount || qbPayment.TotalAmt;
+
+      await prisma.payment.upsert({
+        where: { externalId: qbPayment.Id },
+        create: {
+          jobId,
+          externalId: qbPayment.Id,
+          externalInvoiceId: invoiceId,
+          amount: invoiceLineAmount,
+          receivedAt: new Date(qbPayment.TxnDate),
+          paymentMethod: this.mapQuickbooksPaymentMethod(qbPayment.PaymentMethodRef?.name),
+          status: 'APPLIED',
+          referenceNumber: qbPayment.PaymentRefNum || null,
+          notes: qbPayment.PrivateNote || null,
+        },
+        update: {
+          amount: invoiceLineAmount,
+          receivedAt: new Date(qbPayment.TxnDate),
+          paymentMethod: this.mapQuickbooksPaymentMethod(qbPayment.PaymentMethodRef?.name),
+          referenceNumber: qbPayment.PaymentRefNum || null,
+          notes: qbPayment.PrivateNote || null,
+        },
+      });
+    }
+  }
+
+  /**
+   * Map QuickBooks payment method to our enum
+   */
+  private mapQuickbooksPaymentMethod(qbMethod?: string): string | null {
+    if (!qbMethod) return null;
+
+    const method = qbMethod.toUpperCase();
+    if (method.includes('CHECK')) return 'CHECK';
+    if (method.includes('CARD') || method.includes('CREDIT')) return 'CREDIT_CARD';
+    if (method.includes('ACH') || method.includes('BANK')) return 'ACH';
+    if (method.includes('WIRE')) return 'WIRE';
+    return 'OTHER';
+  }
+
+  /**
+   * Compute AR status based on payment amounts and due date
+   */
+  private computeArStatus(
+    amountPaid: number,
+    amountOutstanding: number,
+    invoiceDueDate: Date | null,
+  ): string {
+    // OVERDUE takes precedence if due date is in the past
+    if (invoiceDueDate && invoiceDueDate < new Date() && amountOutstanding > 0) {
+      return 'OVERDUE';
+    }
+
+    // PAID: fully paid
+    if (amountOutstanding <= 0) {
+      return 'PAID';
+    }
+
+    // PARTIALLY_PAID: some payment made but still outstanding
+    if (amountPaid > 0 && amountOutstanding > 0) {
+      return 'PARTIALLY_PAID';
+    }
+
+    // UNPAID: no payment made
+    return 'UNPAID';
+  }
+
+  /**
    * Create a placeholder snapshot for jobs without QuickBooks data
    */
   private async createPlaceholderSnapshot(jobId: string, job: any): Promise<JobFinancialSnapshot> {
@@ -197,6 +303,11 @@ export class AccountingService {
         schedulingRisk: null,
         accountingSource: 'PLACEHOLDER',
         accountingLastSyncAt: null,
+        amountPaid: 0,
+        amountOutstanding: contractAmount,
+        arStatus: 'UNPAID',
+        invoiceDueDate: null,
+        lastPaymentAt: null,
       },
       update: {
         accountingSource: 'PLACEHOLDER',

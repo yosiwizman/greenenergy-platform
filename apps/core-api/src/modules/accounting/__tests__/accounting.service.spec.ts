@@ -15,6 +15,9 @@ jest.mock('@greenenergy/db', () => ({
       upsert: jest.fn(),
       update: jest.fn(),
     },
+    payment: {
+      upsert: jest.fn(),
+    },
   },
 }));
 
@@ -26,6 +29,7 @@ describe('AccountingService', () => {
     // Create mock QuickbooksClient
     const mockQuickbooksClient = {
       fetchInvoiceByJobNumber: jest.fn(),
+      fetchPaymentsForInvoice: jest.fn(),
       isEnabled: jest.fn().mockReturnValue(false),
     };
 
@@ -122,11 +126,30 @@ describe('AccountingService', () => {
         DocNumber: 'J-1001',
         TotalAmt: 45000,
         Balance: 0,
+        DueDate: '2024-02-15',
         TxnDate: '2024-01-15',
       };
 
+      const mockPayments = [
+        {
+          Id: 'PAY-1',
+          TotalAmt: 20000,
+          TxnDate: '2024-01-20',
+          PaymentMethodRef: { name: 'Check' },
+          PaymentRefNum: 'CHK-1001',
+        },
+        {
+          Id: 'PAY-2',
+          TotalAmt: 25000,
+          TxnDate: '2024-02-01',
+          PaymentMethodRef: { name: 'Credit Card' },
+        },
+      ];
+
       (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
       (quickbooksClient.fetchInvoiceByJobNumber as jest.Mock).mockResolvedValue(mockInvoice);
+      (quickbooksClient.fetchPaymentsForInvoice as jest.Mock).mockResolvedValue(mockPayments);
+      (prisma.payment.upsert as jest.Mock).mockResolvedValue({});
       (prisma.jobFinancialSnapshot.upsert as jest.Mock).mockImplementation((args) => {
         return Promise.resolve({
           id: 'snap1',
@@ -138,6 +161,7 @@ describe('AccountingService', () => {
       const result = await service.syncJobFromQuickbooks('job1');
 
       expect(quickbooksClient.fetchInvoiceByJobNumber).toHaveBeenCalledWith('J-1001');
+      expect(quickbooksClient.fetchPaymentsForInvoice).toHaveBeenCalledWith('QB-123');
       expect(result.contractAmount).toBe(45000);
       expect(result.accountingSource).toBe('QUICKBOOKS');
       expect(result.accountingLastSyncAt).toBeDefined();
@@ -146,6 +170,16 @@ describe('AccountingService', () => {
       const upsertCall = (prisma.jobFinancialSnapshot.upsert as jest.Mock).mock.calls[0][0];
       expect(upsertCall.create.marginAmount).toBe(33000); // 45000 - 12000
       expect(upsertCall.create.marginPercent).toBeCloseTo(73.33, 1);
+
+      // Verify AR fields (Phase 5 Sprint 1)
+      expect(upsertCall.create.amountPaid).toBe(45000); // 20000 + 25000
+      expect(upsertCall.create.amountOutstanding).toBe(0); // fully paid
+      expect(upsertCall.create.arStatus).toBe('PAID');
+      expect(upsertCall.create.invoiceDueDate).toEqual(new Date('2024-02-15'));
+      expect(upsertCall.create.lastPaymentAt).toBeDefined();
+
+      // Verify payment sync calls
+      expect(prisma.payment.upsert).toHaveBeenCalledTimes(2);
     });
 
     it('should mark existing snapshot as PLACEHOLDER when no invoice found', async () => {

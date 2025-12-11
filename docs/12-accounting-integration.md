@@ -344,20 +344,259 @@ pnpm --filter @greenenergy/core-api test  # Core API tests only
 - **Caching**: None in v1 (future: Redis cache for QB responses)
 - **Database Impact**: 1 read + 1 upsert per job
 
+## AR & Payment Tracking (Phase 5 Sprint 1)
+
+### Overview
+
+The Accounts Receivable (AR) module extends the QuickBooks integration to sync **payment data** and compute AR status for each job. This provides real-time visibility into outstanding balances, payment history, and overdue invoices.
+
+**Key Features:**
+
+- ✅ Payment sync from QuickBooks
+- ✅ AR status computation (PAID, PARTIALLY_PAID, UNPAID, OVERDUE)
+- ✅ Amount paid and outstanding tracking
+- ✅ Invoice due date tracking
+- ✅ Finance API endpoints for AR visibility
+- ✅ Finance dashboard with AR summary and job-level details
+- ✅ Integration with daily QuickBooks sync
+
+### Data Model Extensions
+
+#### Payment Model
+
+New `Payment` model tracks individual payments received:
+
+```prisma
+model Payment {
+  id                 String   @id @default(cuid())
+  jobId              String
+  job                Job      @relation(fields: [jobId], references: [id])
+  externalId         String   @unique // QuickBooks payment ID
+  externalInvoiceId  String?  // QuickBooks invoice ID
+  amount             Float
+  receivedAt         DateTime
+  paymentMethod      String?  // 'CREDIT_CARD' | 'CHECK' | 'ACH' | 'WIRE' | 'OTHER'
+  status             String   // 'APPLIED' | 'PENDING' | 'REVERSED'
+  referenceNumber    String?  // Check number, transaction ID, etc.
+  notes              String?
+  
+  @@index([jobId])
+  @@index([receivedAt])
+  @@index([status])
+}
+```
+
+#### JobFinancialSnapshot Extensions
+
+AR tracking fields added to existing snapshot:
+
+```prisma
+model JobFinancialSnapshot {
+  // ... existing fields ...
+  
+  // AR tracking (Phase 5 Sprint 1)
+  amountPaid        Float?    @default(0)
+  amountOutstanding Float?    @default(0)
+  arStatus          String?   // 'PAID' | 'PARTIALLY_PAID' | 'UNPAID' | 'OVERDUE'
+  lastPaymentAt     DateTime?
+  invoiceDueDate    DateTime?
+  
+  @@index([arStatus])
+}
+```
+
+### AR Status Logic
+
+The `arStatus` field is computed based on payment data and due dates:
+
+| Status | Condition |
+|--------|----------|
+| `PAID` | `amountOutstanding <= 0` (fully paid) |
+| `PARTIALLY_PAID` | `amountPaid > 0` AND `amountOutstanding > 0` |
+| `UNPAID` | `amountPaid = 0` AND `amountOutstanding > 0` |
+| `OVERDUE` | `invoiceDueDate < today` AND `amountOutstanding > 0` (takes precedence) |
+
+### QuickBooks Payment Sync
+
+**AccountingService Integration:**
+
+The existing `syncJobFromQuickbooks()` method now:
+
+1. Fetches invoice from QuickBooks
+2. Fetches all payments linked to that invoice
+3. Upserts `Payment` records (keyed by `externalId`)
+4. Computes `amountPaid` and `amountOutstanding`
+5. Determines `arStatus` based on logic above
+6. Updates `JobFinancialSnapshot` with AR fields
+
+**Payment Method Mapping:**
+
+- QuickBooks `PaymentMethodRef.name` → Platform `paymentMethod` enum
+- "Check" → `CHECK`
+- "Credit Card" / "Card" → `CREDIT_CARD`
+- "ACH" / "Bank" → `ACH`
+- "Wire" → `WIRE`
+- Other → `OTHER`
+
+### Finance API Endpoints
+
+New internal finance API endpoints (protected by `InternalApiKeyGuard`):
+
+#### GET /api/v1/finance/ar/summary
+
+Returns aggregated AR metrics:
+
+```json
+{
+  "totalOutstanding": 250000,
+  "totalPaid": 500000,
+  "totalContractValue": 750000,
+  "jobsPaid": 10,
+  "jobsPartiallyPaid": 5,
+  "jobsUnpaid": 3,
+  "jobsOverdue": 2
+}
+```
+
+#### GET /api/v1/finance/ar/jobs
+
+Returns list of jobs with AR details. Optional query param: `?status=OVERDUE|UNPAID|PARTIALLY_PAID|PAID`
+
+```json
+[
+  {
+    "jobId": "cuid123",
+    "jobNumber": "J-1001",
+    "customerName": "John Doe",
+    "status": "IN_PROGRESS",
+    "contractAmount": 50000,
+    "amountPaid": 25000,
+    "amountOutstanding": 25000,
+    "arStatus": "PARTIALLY_PAID",
+    "lastPaymentAt": "2024-01-15T10:00:00.000Z",
+    "invoiceDueDate": "2024-02-15T00:00:00.000Z",
+    "payments": [
+      {
+        "id": "pay1",
+        "externalId": "QB-PAY-123",
+        "amount": 25000,
+        "receivedAt": "2024-01-15T10:00:00.000Z",
+        "paymentMethod": "CHECK",
+        "status": "APPLIED",
+        "referenceNumber": "CHK-1001"
+      }
+    ]
+  }
+]
+```
+
+#### GET /api/v1/finance/ar/jobs/:jobId
+
+Returns AR details for a specific job (same structure as above).
+
+### Finance Dashboard
+
+New `/finance` page in the internal dashboard:
+
+**Summary Cards:**
+- Total Outstanding (red)
+- Total Paid (green)
+- Total Contract Value (blue)
+- Partially Paid count (amber)
+
+**AR Status Filter:**
+- All Jobs
+- Overdue
+- Unpaid
+- Partially Paid
+- Paid
+
+**Jobs Table:**
+- Job # (link to job details)
+- Customer name
+- Job status
+- Contract amount
+- Amount paid (green)
+- Outstanding (red)
+- AR status badge (color-coded)
+- Invoice due date
+- Last payment date
+- Actions (View Job link)
+
+**Badge Colors:**
+- PAID: Green
+- PARTIALLY_PAID: Blue
+- UNPAID: Yellow
+- OVERDUE: Red
+
+### Integration with Scheduled Sync
+
+The daily scheduled QuickBooks sync automatically:
+
+1. Syncs all active job invoices
+2. Syncs payments for each invoice
+3. Updates AR status for all jobs
+4. No additional configuration required
+
+AR data is refreshed alongside contract amounts during the nightly sync.
+
+### Testing
+
+**FinanceService Tests:**
+
+Located in `apps/core-api/src/modules/finance/__tests__/finance.service.spec.ts`:
+
+- AR summary aggregation (empty, multi-job, null handling)
+- Job list filtering by AR status
+- Payment DTO mapping
+- Single job AR detail retrieval
+- Error handling (job not found)
+
+**AccountingService Tests (Updated):**
+
+Existing tests now verify:
+- Payment sync from QuickBooks
+- AR status computation
+- `amountPaid` and `amountOutstanding` calculation
+- `lastPaymentAt` tracking
+
+### Future Enhancements
+
+**Phase 5 Sprint 2+:**
+- Invoice generation from platform
+- Payment reminder automation
+- AR aging reports (30/60/90 days)
+- Payment plan tracking
+- Email notifications for overdue invoices
+- AI-powered payment forecasting
+- Integration with payment processors (Stripe, Square)
+
 ## Changelog
 
-### Phase 3 Sprint 1 (Current)
+### Phase 5 Sprint 1 (Current)
+
+- ✅ Payment sync from QuickBooks
+- ✅ AR status computation and tracking
+- ✅ Finance API endpoints
+- ✅ Finance dashboard with AR visibility
+- ✅ Test coverage for finance module
+
+### Phase 3 Sprint 1 & 2
 
 - ✅ Initial QuickBooks integration (read-only)
 - ✅ Contract amount sync
+- ✅ OAuth2 token refresh automation
+- ✅ Scheduled daily sync
 - ✅ Accounting source tracking
 - ✅ Profit dashboard UI enhancements
 - ✅ Sync endpoints (single + batch)
-- ✅ Test coverage (7 scenarios)
+- ✅ Test coverage (accounting service)
 
 ### Planned
 
-- ⏳ OAuth2 token refresh automation
+- ⏳ Invoice generation and management
+- ⏳ Payment reminder automation
 - ⏳ Cost breakdown sync
 - ⏳ Multi-invoice support
+- ⏳ AR aging reports
 - ⏳ Webhook integration
