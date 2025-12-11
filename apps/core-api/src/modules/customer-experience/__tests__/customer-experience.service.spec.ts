@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomerExperienceService } from '../customer-experience.service';
 import { AiOperationsService } from '../../ai-ops/ai-operations.service';
+import { EmailNotificationService } from '../../notifications/email-notification.service';
 import { prisma } from '@greenenergy/db';
 import { NotFoundException } from '@nestjs/common';
 
@@ -15,12 +16,19 @@ jest.mock('@greenenergy/db', () => ({
       create: jest.fn(),
       updateMany: jest.fn(),
     },
+    contact: {
+      findFirst: jest.fn(),
+    },
+    customerUser: {
+      findFirst: jest.fn(),
+    },
   },
 }));
 
 describe('CustomerExperienceService', () => {
   let service: CustomerExperienceService;
   let mockAiOperationsService: jest.Mocked<AiOperationsService>;
+  let mockEmailNotificationService: jest.Mocked<EmailNotificationService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -30,10 +38,16 @@ describe('CustomerExperienceService', () => {
       generateCustomerMessage: jest.fn(),
     } as any;
 
+    // Mock EmailNotificationService
+    mockEmailNotificationService = {
+      sendCustomerMessageEmail: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CustomerExperienceService,
         { provide: AiOperationsService, useValue: mockAiOperationsService },
+        { provide: EmailNotificationService, useValue: mockEmailNotificationService },
       ],
     }).compile();
 
@@ -191,6 +205,93 @@ describe('CustomerExperienceService', () => {
       await expect(service.createMessageForJob('nonexistent', input)).rejects.toThrow(
         NotFoundException
       );
+    });
+
+    it('should send email when channel=EMAIL and sendEmail=true with customer email found', async () => {
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.customerMessage.create as jest.Mock).mockResolvedValue({
+        ...mockCreatedMessage,
+        channel: 'EMAIL',
+      });
+      (prisma.contact.findFirst as jest.Mock).mockResolvedValue({
+        email: 'customer@example.com',
+      });
+
+      const input = {
+        type: 'STATUS_UPDATE' as const,
+        channel: 'EMAIL' as const,
+        title: 'Status Update',
+        body: 'Your project is progressing',
+        sendEmail: true,
+      };
+
+      await service.createMessageForJob('job-123', input);
+
+      expect(mockEmailNotificationService.sendCustomerMessageEmail).toHaveBeenCalledWith({
+        toEmail: 'customer@example.com',
+        jobId: 'job-123',
+        messageTitle: 'Test Message',
+        messageBody: 'Test body',
+        isAiGenerated: false,
+      });
+    });
+
+    it('should NOT send email when channel=EMAIL but sendEmail=false', async () => {
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.customerMessage.create as jest.Mock).mockResolvedValue({
+        ...mockCreatedMessage,
+        channel: 'EMAIL',
+      });
+
+      const input = {
+        type: 'STATUS_UPDATE' as const,
+        channel: 'EMAIL' as const,
+        title: 'Status Update',
+        body: 'Your project is progressing',
+        sendEmail: false,
+      };
+
+      await service.createMessageForJob('job-123', input);
+
+      expect(mockEmailNotificationService.sendCustomerMessageEmail).not.toHaveBeenCalled();
+    });
+
+    it('should NOT send email when channel=PORTAL regardless of sendEmail flag', async () => {
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.customerMessage.create as jest.Mock).mockResolvedValue(mockCreatedMessage);
+
+      const input = {
+        type: 'STATUS_UPDATE' as const,
+        channel: 'PORTAL' as const,
+        title: 'Status Update',
+        body: 'Your project is progressing',
+        sendEmail: true,
+      };
+
+      await service.createMessageForJob('job-123', input);
+
+      expect(mockEmailNotificationService.sendCustomerMessageEmail).not.toHaveBeenCalled();
+    });
+
+    it('should NOT throw when channel=EMAIL, sendEmail=true but no customer email found', async () => {
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.customerMessage.create as jest.Mock).mockResolvedValue({
+        ...mockCreatedMessage,
+        channel: 'EMAIL',
+      });
+      (prisma.contact.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.customerUser.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const input = {
+        type: 'STATUS_UPDATE' as const,
+        channel: 'EMAIL' as const,
+        title: 'Status Update',
+        body: 'Your project is progressing',
+        sendEmail: true,
+      };
+
+      await expect(service.createMessageForJob('job-123', input)).resolves.not.toThrow();
+      expect(mockEmailNotificationService.sendCustomerMessageEmail).not.toHaveBeenCalled();
     });
   });
 

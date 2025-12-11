@@ -86,15 +86,167 @@ No new LLM dependency. The engine reuses the existing `AiOperationsService.gener
 - Distinguish between system messages, human-written messages, and AI-assisted drafts
 - Mark messages as read
 
+## Email Channel & Notifications (Phase 4 Sprint 2)
+
+**Status**: ✅ Implemented
+
+The CX Engine now supports sending transactional emails via the EMAIL channel using Resend as the email provider.
+
+### Behavior
+
+- Messages are **always stored** in the CustomerMessage timeline
+- Email is **only sent** when:
+  - `channel === 'EMAIL'`
+  - `sendEmail === true` (in CreateCustomerMessageInput)
+  - Customer email can be resolved from Contact or CustomerUser
+- If no customer email is found:
+  - System logs a warning
+  - Email sending is skipped gracefully
+  - Message is still stored in the timeline
+
+### Email Provider Configuration
+
+**Environment Variables** (required for email sending):
+
+```env
+NOTIFICATIONS_EMAIL_PROVIDER="resend"      # Email provider (currently only 'resend' supported)
+RESEND_API_KEY="your_resend_api_key"       # Resend API key (get from resend.com)
+NOTIFICATIONS_FROM_EMAIL="no-reply@yourdomain.com"  # Verified sender email
+```
+
+**Provider Setup**:
+
+1. Sign up at [resend.com](https://resend.com)
+2. Verify your sending domain
+3. Get your API key from the dashboard
+4. Add environment variables to staging/production environments
+5. **Important**: Never commit API keys to git
+
+### Email Service Architecture
+
+**NotificationsModule** (`apps/core-api/src/modules/notifications/`):
+
+- `EmailNotificationService`: Provider-agnostic email service
+  - Wraps Resend SDK behind clean interface
+  - No-op behavior when credentials missing (logs warning, doesn't throw)
+  - Can be swapped to different providers (SendGrid, Mailgun) in future
+  - Sends plain-text emails (HTML templates can be added later)
+
+**Customer Email Resolution**:
+
+1. Primary contact with email (Contact.isPrimary = true)
+2. Any contact with email
+3. CustomerUser email (portal user)
+
+### Email Content Format
+
+**Subject**: `Green Energy update for Job #<jobId>: <messageTitle>`
+
+**Body** (plain text):
+
+```
+Hello,
+
+<messageBody>
+
+Job Reference: #<jobId>
+
+(This message was AI-assisted)  // Only if isAiGenerated=true
+
+---
+Green Energy Solar
+Your trusted solar installation partner
+```
+
+### Usage Example
+
+**Create message with email sending**:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/cx/jobs/<jobId>/messages \
+  -H "Content-Type: application/json" \
+  -H "x-internal-api-key: your-internal-api-key" \
+  -d '{
+    "type": "STATUS_UPDATE",
+    "channel": "EMAIL",
+    "title": "Your Solar Installation Update",
+    "body": "Your panels have been delivered and installation is scheduled for next week.",
+    "sendEmail": true
+  }'
+```
+
+**Create message without email sending** (store only):
+
+```bash
+curl -X POST http://localhost:3000/api/v1/cx/jobs/<jobId>/messages \
+  -H "Content-Type: application/json" \
+  -H "x-internal-api-key: your-internal-api-key" \
+  -d '{
+    "type": "STATUS_UPDATE",
+    "channel": "EMAIL",
+    "title": "Draft Status Update",
+    "body": "Draft message for review",
+    "sendEmail": false
+  }'
+```
+
+### Testing
+
+**Unit Tests** (`apps/core-api/src/modules/notifications/__tests__/email-notification.service.spec.ts`):
+- Tests with valid Resend configuration
+- Tests with missing API key (no-op behavior)
+- Tests with missing FROM email (no-op behavior)
+- Tests with unsupported provider (no-op behavior)
+- All tests mock Resend SDK (no real HTTP calls)
+
+**CustomerExperienceService Tests** (updated):
+- Email sent when channel=EMAIL, sendEmail=true, customer email found
+- Email NOT sent when channel=EMAIL, sendEmail=false
+- Email NOT sent when channel=PORTAL regardless of sendEmail flag
+- No errors thrown when customer email missing
+
+**Manual Testing** (staging/local with valid credentials):
+1. Set up Resend account and verify domain
+2. Add environment variables to `.env`
+3. Create message with `channel: 'EMAIL'` and `sendEmail: true`
+4. Verify email received at customer address
+5. Check logs for email sending confirmation
+
+### Files Added (Phase 4 Sprint 2)
+
+**Backend**:
+- `apps/core-api/src/modules/notifications/notifications.module.ts` (new)
+- `apps/core-api/src/modules/notifications/email-notification.service.ts` (new)
+- `apps/core-api/src/modules/notifications/__tests__/email-notification.service.spec.ts` (new)
+- `apps/core-api/src/modules/customer-experience/customer-experience.module.ts` (updated: imports NotificationsModule)
+- `apps/core-api/src/modules/customer-experience/customer-experience.service.ts` (updated: integrates email sending)
+- `apps/core-api/src/modules/customer-experience/__tests__/customer-experience.service.spec.ts` (updated: adds email tests)
+
+**Shared Types**:
+- `packages/shared-types/src/index.ts` (updated: added `sendEmail?: boolean` to CreateCustomerMessageInput)
+
+**Configuration**:
+- `apps/core-api/.env.example` (updated: added notification env vars)
+
+### Security & Best Practices
+
+- **API keys stored in environment variables only** (never in code/git)
+- Email provider credentials secured in Railway/Vercel secrets
+- Graceful degradation: missing config doesn't crash production
+- Email failures logged but don't break message creation
+- Plain-text emails (no tracking pixels, no HTML injection risks)
+
 ## Future Enhancements
 
-**Phase 4, Sprint 2+ (Planned)**:
-- Email/SMS delivery: Hook message creation events to actual notification channels
+**Phase 4, Sprint 3+ (Planned)**:
+- SMS delivery channel (Twilio integration)
+- HTML email templates with branding
 - Message templates: Predefined templates for common scenarios
 - Bulk messaging: Send updates to all customers with active jobs
 - Message approval workflow: Review queue for AI-suggested messages before delivery
 - Webhooks: Trigger messages based on job status changes or workflow completions
 - Analytics: Track read rates, response times, customer satisfaction
+- Email open tracking and click analytics
 
 ## Testing
 
