@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CustomerExperienceService } from '../customer-experience.service';
 import { AiOperationsService } from '../../ai-ops/ai-operations.service';
 import { EmailNotificationService } from '../../notifications/email-notification.service';
+import { SmsNotificationService } from '../../notifications/sms-notification.service';
 import { prisma } from '@greenenergy/db';
 import { NotFoundException } from '@nestjs/common';
 
@@ -29,6 +30,7 @@ describe('CustomerExperienceService', () => {
   let service: CustomerExperienceService;
   let mockAiOperationsService: jest.Mocked<AiOperationsService>;
   let mockEmailNotificationService: jest.Mocked<EmailNotificationService>;
+  let mockSmsNotificationService: jest.Mocked<SmsNotificationService>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -43,11 +45,17 @@ describe('CustomerExperienceService', () => {
       sendCustomerMessageEmail: jest.fn().mockResolvedValue(undefined),
     } as any;
 
+    // Mock SmsNotificationService
+    mockSmsNotificationService = {
+      sendCustomerSms: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CustomerExperienceService,
         { provide: AiOperationsService, useValue: mockAiOperationsService },
         { provide: EmailNotificationService, useValue: mockEmailNotificationService },
+        { provide: SmsNotificationService, useValue: mockSmsNotificationService },
       ],
     }).compile();
 

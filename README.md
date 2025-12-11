@@ -805,11 +805,35 @@ Extended `JobFinancialSnapshot` with AR fields:
 - ✅ **Primary Invoice Tracking**: Link invoices to financial snapshots
 - ✅ **Test Coverage**: Comprehensive tests for invoice creation and retrieval
 
-**Future Enhancements** (Phase 5 Sprint 4+):
+**Phase 7 Sprint 1 Extensions** (Multi-Channel Notifications v1):
+
+- ✅ **SMS Channel for CX**: Send transactional SMS messages via Customer Experience Engine
+- ✅ **Twilio Integration**: Provider-agnostic SMS service with Twilio as first provider
+- ✅ **Payment Reminder SMS**: Optional SMS reminders for overdue invoices (alongside email)
+- ✅ **Configuration Gating**: SMS fully optional via environment variables (graceful no-op without config)
+- ✅ **Phone Resolution**: Automatic customer phone lookup from Contact records
+- ✅ **SMS Length Management**: Automatic truncation to ~300 chars to control costs
+- ✅ **Test Coverage**: Comprehensive tests for SMS notification service
+
+**SMS Configuration**:
+
+```env
+# Optional: SMS via Twilio
+NOTIFICATIONS_SMS_PROVIDER="twilio"
+TWILIO_ACCOUNT_SID="your_twilio_account_sid"
+TWILIO_AUTH_TOKEN="your_twilio_auth_token"
+TWILIO_FROM_NUMBER="+1XXXXXXXXXX"
+
+# Optional: Enable SMS for payment reminders (default: false)
+ENABLE_PAYMENT_REMINDER_SMS="false"
+```
+
+**Future Enhancements** (Phase 7 Sprint 2+):
+- Two-way SMS conversations (customer replies)
+- HTML email templates with branding
 - Multi-line item invoices with custom descriptions
 - Custom invoice templates and branding
 - Escalation reminders (multiple stages)
-- SMS reminders
 - Payment links in emails (Stripe, Square integration)
 - AI-powered payment forecasting
 - Invoice PDF generation and delivery
