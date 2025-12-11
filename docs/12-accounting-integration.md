@@ -562,18 +562,159 @@ Existing tests now verify:
 
 ### Future Enhancements
 
-**Phase 5 Sprint 2+:**
+**Phase 5 Sprint 3+:**
 - Invoice generation from platform
-- Payment reminder automation
-- AR aging reports (30/60/90 days)
 - Payment plan tracking
-- Email notifications for overdue invoices
 - AI-powered payment forecasting
 - Integration with payment processors (Stripe, Square)
+- Multi-currency support
+
+## AR Aging & Payment Reminder Automation (Phase 5 Sprint 2)
+
+### Overview
+
+Phase 5 Sprint 2 delivers automated AR aging analysis with 5 buckets and intelligent payment reminder workflows.
+
+**Key Features:**
+
+- ✅ AR aging buckets (CURRENT, 1-30, 31-60, 61-90, 91+ days overdue)
+- ✅ Automated payment reminders via email for 7+ days overdue invoices
+- ✅ 7-day cooldown to prevent reminder spam
+- ✅ Integration with existing workflow engine and CX notification system
+- ✅ Finance dashboard enhancement with aging visualization
+
+### AR Aging Buckets
+
+Jobs are automatically categorized based on invoice due dates:
+
+| Bucket | Condition | Dashboard Color |
+|--------|-----------|----------------|
+| CURRENT | Not yet due or no due date | Gray |
+| DAYS_1_30 | 1-30 days overdue | Yellow |
+| DAYS_31_60 | 31-60 days overdue | Orange |
+| DAYS_61_90 | 61-90 days overdue | Red |
+| DAYS_91_PLUS | 91+ days overdue | Dark Red |
+
+### AR Aging Endpoint
+
+#### GET /api/v1/finance/ar/aging
+
+Returns aging summary with buckets:
+
+```json
+{
+  "generatedAt": "2024-03-15T10:00:00.000Z",
+  "totalOutstanding": 250000,
+  "buckets": [
+    {
+      "bucket": "CURRENT",
+      "outstanding": 50000,
+      "jobsCount": 5
+    },
+    {
+      "bucket": "DAYS_1_30",
+      "outstanding": 100000,
+      "jobsCount": 8
+    },
+    {
+      "bucket": "DAYS_31_60",
+      "outstanding": 60000,
+      "jobsCount": 4
+    },
+    {
+      "bucket": "DAYS_61_90",
+      "outstanding": 30000,
+      "jobsCount": 2
+    },
+    {
+      "bucket": "DAYS_91_PLUS",
+      "outstanding": 10000,
+      "jobsCount": 1
+    }
+  ]
+}
+```
+
+### Payment Reminder Workflow
+
+**Rule:** `FINANCE_AR_OVERDUE_PAYMENT_REMINDER`
+
+**Trigger Conditions:**
+- Job has `arStatus = 'OVERDUE'`
+- Amount outstanding > 0
+- Invoice is at least 7 days overdue
+- No reminder sent within last 7 days (cooldown)
+
+**Actions:**
+1. Create CX message with `type = 'PAYMENT_REMINDER'`
+2. Send email to customer with templated reminder
+3. Create JobNimbus internal task for follow-up
+4. Record workflow action log
+
+**Email Template:**
+- Friendly tone
+- Includes outstanding amount and due date
+- No payment links (future enhancement)
+- Encourages customer to contact office
+
+**Cooldown Logic:**
+WorkflowActionLog tracks last reminder per job. Customers receive maximum one reminder every 7 days to avoid spam.
+
+### Dashboard Enhancements
+
+The `/finance` dashboard now includes:
+
+**AR Aging Analysis Section:**
+- 5 cards showing each aging bucket
+- Outstanding amount per bucket (color-coded)
+- Job count per bucket
+- Responsive grid layout
+
+### Testing
+
+**FinanceService Tests (Updated):**
+- AR aging bucket computation
+- Days overdue calculation
+- CURRENT bucket for non-due invoices
+- Handling null due dates
+- Edge cases (zero/negative outstanding)
+
+**WorkflowService Tests:**
+- Payment reminder trigger conditions
+- Cooldown enforcement
+- CX message creation with EMAIL channel
+- JobNimbus task creation
+- Email sending (mocked)
+
+### Configuration
+
+No new environment variables required. Uses existing:
+- QuickBooks sync settings
+- Workflow engine (cron at 4 AM daily)
+- CX Engine + Resend email service
+
+### Future Enhancements
+
+**Phase 5 Sprint 3+:**
+- Escalation reminders (multiple stages)
+- SMS reminders in addition to email
+- Custom reminder templates per customer
+- Payment links in reminder emails
+- AR aging trend analysis
 
 ## Changelog
 
-### Phase 5 Sprint 1 (Current)
+### Phase 5 Sprint 2 (Current)
+
+- ✅ AR aging buckets with 5 categories
+- ✅ Automated payment reminder workflow
+- ✅ GET /api/v1/finance/ar/aging endpoint
+- ✅ Finance dashboard aging visualization
+- ✅ Email notifications via CX Engine
+- ✅ 7-day cooldown logic
+- ✅ Test coverage for aging and reminders
+
+### Phase 5 Sprint 1
 
 - ✅ Payment sync from QuickBooks
 - ✅ AR status computation and tracking

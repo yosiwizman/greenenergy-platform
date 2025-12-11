@@ -110,9 +110,12 @@ export class CustomerExperienceService {
       `Creating AI-generated ${params.messageType} message for job: ${jobId}`,
     );
 
+    // Only AI message types are supported (not PAYMENT_REMINDER)
+    const aiMessageType = params.messageType as any; // Cast for now since AI doesn't support PAYMENT_REMINDER
+
     // Use AiOperationsService to generate message content
     const aiResponse = await this.aiOperationsService.generateCustomerMessage(jobId, {
-      type: params.messageType,
+      type: aiMessageType,
       tone: params.tone || 'FRIENDLY',
       customQuestion: params.customPrompt,
     });
@@ -166,6 +169,7 @@ export class CustomerExperienceService {
       STATUS_UPDATE: 'Project Status Update',
       ETA_UPDATE: 'Installation Timeline Update',
       GENERIC: 'Message from Your Solar Team',
+      PAYMENT_REMINDER: 'Payment Reminder',
     };
 
     return titles[type];

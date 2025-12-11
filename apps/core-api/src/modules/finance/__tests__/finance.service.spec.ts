@@ -320,4 +320,129 @@ describe('FinanceService', () => {
       expect(result.arStatus).toBe('UNPAID');
     });
   });
+
+  describe('getArAgingSummary (Phase 5 Sprint 2)', () => {
+    it('should return empty buckets when no jobs have outstanding amounts', async () => {
+      (prisma.jobFinancialSnapshot.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getArAgingSummary();
+
+      expect(result.totalOutstanding).toBe(0);
+      expect(result.buckets).toHaveLength(5);
+      result.buckets.forEach((bucket) => {
+        expect(bucket.outstanding).toBe(0);
+        expect(bucket.jobsCount).toBe(0);
+      });
+    });
+
+    it('should correctly bucket jobs by days overdue', async () => {
+      const now = new Date('2024-03-15');
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      const mockSnapshots = [
+        {
+          jobId: 'job1',
+          amountOutstanding: 10000,
+          invoiceDueDate: new Date('2024-03-20'), // 5 days in future = CURRENT
+        },
+        {
+          jobId: 'job2',
+          amountOutstanding: 20000,
+          invoiceDueDate: new Date('2024-03-01'), // 14 days overdue = DAYS_1_30
+        },
+        {
+          jobId: 'job3',
+          amountOutstanding: 30000,
+          invoiceDueDate: new Date('2024-01-30'), // 45 days overdue = DAYS_31_60
+        },
+        {
+          jobId: 'job4',
+          amountOutstanding: 40000,
+          invoiceDueDate: new Date('2023-12-30'), // 76 days overdue = DAYS_61_90
+        },
+        {
+          jobId: 'job5',
+          amountOutstanding: 50000,
+          invoiceDueDate: new Date('2023-11-15'), // 121 days overdue = DAYS_91_PLUS
+        },
+      ];
+
+      (prisma.jobFinancialSnapshot.findMany as jest.Mock).mockResolvedValue(mockSnapshots);
+
+      const result = await service.getArAgingSummary();
+
+      expect(result.totalOutstanding).toBe(150000);
+      
+      const currentBucket = result.buckets.find(b => b.bucket === 'CURRENT')!;
+      expect(currentBucket.outstanding).toBe(10000);
+      expect(currentBucket.jobsCount).toBe(1);
+
+      const days1to30Bucket = result.buckets.find(b => b.bucket === 'DAYS_1_30')!;
+      expect(days1to30Bucket.outstanding).toBe(20000);
+      expect(days1to30Bucket.jobsCount).toBe(1);
+
+      const days31to60Bucket = result.buckets.find(b => b.bucket === 'DAYS_31_60')!;
+      expect(days31to60Bucket.outstanding).toBe(30000);
+      expect(days31to60Bucket.jobsCount).toBe(1);
+
+      const days61to90Bucket = result.buckets.find(b => b.bucket === 'DAYS_61_90')!;
+      expect(days61to90Bucket.outstanding).toBe(40000);
+      expect(days61to90Bucket.jobsCount).toBe(1);
+
+      const days91PlusBucket = result.buckets.find(b => b.bucket === 'DAYS_91_PLUS')!;
+      expect(days91PlusBucket.outstanding).toBe(50000);
+      expect(days91PlusBucket.jobsCount).toBe(1);
+
+      jest.useRealTimers();
+    });
+
+    it('should handle jobs with no due date as CURRENT', async () => {
+      const mockSnapshots = [
+        {
+          jobId: 'job1',
+          amountOutstanding: 10000,
+          invoiceDueDate: null,
+        },
+      ];
+
+      (prisma.jobFinancialSnapshot.findMany as jest.Mock).mockResolvedValue(mockSnapshots);
+
+      const result = await service.getArAgingSummary();
+
+      const currentBucket = result.buckets.find(b => b.bucket === 'CURRENT')!;
+      expect(currentBucket.outstanding).toBe(10000);
+      expect(currentBucket.jobsCount).toBe(1);
+    });
+
+    it('should ignore jobs with zero or negative outstanding amounts', async () => {
+      const mockSnapshots = [
+        {
+          jobId: 'job1',
+          amountOutstanding: 0,
+          invoiceDueDate: new Date('2024-01-01'),
+        },
+        {
+          jobId: 'job2',
+          amountOutstanding: -100,
+          invoiceDueDate: new Date('2024-01-01'),
+        },
+        {
+          jobId: 'job3',
+          amountOutstanding: null,
+          invoiceDueDate: new Date('2024-01-01'),
+        },
+      ];
+
+      (prisma.jobFinancialSnapshot.findMany as jest.Mock).mockResolvedValue(mockSnapshots);
+
+      const result = await service.getArAgingSummary();
+
+      expect(result.totalOutstanding).toBe(0);
+      result.buckets.forEach((bucket) => {
+        expect(bucket.outstanding).toBe(0);
+        expect(bucket.jobsCount).toBe(0);
+      });
+    });
+  });
 });

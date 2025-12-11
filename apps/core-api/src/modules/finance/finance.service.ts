@@ -1,10 +1,14 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
+import { differenceInCalendarDays } from 'date-fns';
+import { ArAgingBucket } from '@greenenergy/shared-types';
 import type {
   ArSummaryDTO,
   JobArDetailsDTO,
   PaymentDTO,
   JobArStatus,
+  ArAgingSummaryDTO,
+  ArAgingBucketData,
 } from '@greenenergy/shared-types';
 
 @Injectable()
@@ -170,6 +174,111 @@ export class FinanceService {
       invoiceDueDate: snapshot.invoiceDueDate?.toISOString() || null,
       payments: payments.map((p) => this.mapPaymentToDTO(p)),
     };
+  }
+
+  /**
+   * Get AR aging summary with buckets (Phase 5 Sprint 2)
+   */
+  async getArAgingSummary(): Promise<ArAgingSummaryDTO> {
+    this.logger.log('Computing AR aging summary');
+
+    const now = new Date();
+
+    // Fetch all jobs with outstanding amounts
+    const snapshots = await prisma.jobFinancialSnapshot.findMany({
+      where: {
+        amountOutstanding: {
+          gt: 0,
+        },
+      },
+      select: {
+        jobId: true,
+        amountOutstanding: true,
+        invoiceDueDate: true,
+      },
+    });
+
+    // Initialize bucket counters
+    const bucketData: Record<ArAgingBucket, { outstanding: number; jobsCount: number }> = {
+      [ArAgingBucket.CURRENT]: { outstanding: 0, jobsCount: 0 },
+      [ArAgingBucket.DAYS_1_30]: { outstanding: 0, jobsCount: 0 },
+      [ArAgingBucket.DAYS_31_60]: { outstanding: 0, jobsCount: 0 },
+      [ArAgingBucket.DAYS_61_90]: { outstanding: 0, jobsCount: 0 },
+      [ArAgingBucket.DAYS_91_PLUS]: { outstanding: 0, jobsCount: 0 },
+    };
+
+    let totalOutstanding = 0;
+
+    // Process each job and assign to bucket
+    for (const snapshot of snapshots) {
+      const outstanding = snapshot.amountOutstanding || 0;
+      if (outstanding <= 0) continue;
+
+      totalOutstanding += outstanding;
+
+      const bucket = this.computeAgingBucket(snapshot.invoiceDueDate, now);
+      bucketData[bucket].outstanding += outstanding;
+      bucketData[bucket].jobsCount++;
+    }
+
+    // Convert to array format
+    const buckets: ArAgingBucketData[] = [
+      {
+        bucket: ArAgingBucket.CURRENT,
+        outstanding: bucketData[ArAgingBucket.CURRENT].outstanding,
+        jobsCount: bucketData[ArAgingBucket.CURRENT].jobsCount,
+      },
+      {
+        bucket: ArAgingBucket.DAYS_1_30,
+        outstanding: bucketData[ArAgingBucket.DAYS_1_30].outstanding,
+        jobsCount: bucketData[ArAgingBucket.DAYS_1_30].jobsCount,
+      },
+      {
+        bucket: ArAgingBucket.DAYS_31_60,
+        outstanding: bucketData[ArAgingBucket.DAYS_31_60].outstanding,
+        jobsCount: bucketData[ArAgingBucket.DAYS_31_60].jobsCount,
+      },
+      {
+        bucket: ArAgingBucket.DAYS_61_90,
+        outstanding: bucketData[ArAgingBucket.DAYS_61_90].outstanding,
+        jobsCount: bucketData[ArAgingBucket.DAYS_61_90].jobsCount,
+      },
+      {
+        bucket: ArAgingBucket.DAYS_91_PLUS,
+        outstanding: bucketData[ArAgingBucket.DAYS_91_PLUS].outstanding,
+        jobsCount: bucketData[ArAgingBucket.DAYS_91_PLUS].jobsCount,
+      },
+    ];
+
+    return {
+      generatedAt: now.toISOString(),
+      totalOutstanding,
+      buckets,
+    };
+  }
+
+  /**
+   * Compute which aging bucket a job belongs to based on invoice due date
+   */
+  private computeAgingBucket(invoiceDueDate: Date | null, now: Date): ArAgingBucket {
+    // If no due date or not yet due, it's CURRENT
+    if (!invoiceDueDate || invoiceDueDate >= now) {
+      return ArAgingBucket.CURRENT;
+    }
+
+    const daysOverdue = differenceInCalendarDays(now, invoiceDueDate);
+
+    if (daysOverdue <= 0) {
+      return ArAgingBucket.CURRENT;
+    } else if (daysOverdue >= 1 && daysOverdue <= 30) {
+      return ArAgingBucket.DAYS_1_30;
+    } else if (daysOverdue >= 31 && daysOverdue <= 60) {
+      return ArAgingBucket.DAYS_31_60;
+    } else if (daysOverdue >= 61 && daysOverdue <= 90) {
+      return ArAgingBucket.DAYS_61_90;
+    } else {
+      return ArAgingBucket.DAYS_91_PLUS;
+    }
   }
 
   /**

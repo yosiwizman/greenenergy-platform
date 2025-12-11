@@ -7,10 +7,13 @@ import type {
   ArSummaryDTO,
   JobArDetailsDTO,
   JobArStatus,
+  ArAgingSummaryDTO,
+  ArAgingBucket,
 } from '@greenenergy/shared-types';
 
 export default function FinancePage() {
   const [summary, setSummary] = useState<ArSummaryDTO | null>(null);
+  const [agingSummary, setAgingSummary] = useState<ArAgingSummaryDTO | null>(null);
   const [jobs, setJobs] = useState<JobArDetailsDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,25 +28,27 @@ export default function FinancePage() {
     try {
       setLoading(true);
 
-      const summaryRes = await fetch('/api/v1/finance/ar/summary');
-      if (!summaryRes.ok) {
-        throw new Error('Failed to fetch AR summary');
+      const [summaryRes, agingRes, jobsRes] = await Promise.all([
+        fetch('/api/v1/finance/ar/summary'),
+        fetch('/api/v1/finance/ar/aging'),
+        fetch(
+          statusFilter !== 'ALL' 
+            ? `/api/v1/finance/ar/jobs?status=${statusFilter}`
+            : '/api/v1/finance/ar/jobs'
+        ),
+      ]);
+
+      if (!summaryRes.ok || !agingRes.ok || !jobsRes.ok) {
+        throw new Error('Failed to fetch AR data');
       }
+
       const summaryData = await summaryRes.json();
-      setSummary(summaryData);
-
-      // Fetch jobs with optional status filter
-      const jobsUrl = statusFilter !== 'ALL' 
-        ? `/api/v1/finance/ar/jobs?status=${statusFilter}`
-        : '/api/v1/finance/ar/jobs';
-      
-      const jobsRes = await fetch(jobsUrl);
-      if (!jobsRes.ok) {
-        throw new Error('Failed to fetch AR jobs');
-      }
+      const agingData = await agingRes.json();
       const jobsData = await jobsRes.json();
-      setJobs(jobsData);
 
+      setSummary(summaryData);
+      setAgingSummary(agingData);
+      setJobs(jobsData);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -83,6 +88,28 @@ export default function FinancePage() {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const getBucketLabel = (bucket: ArAgingBucket): string => {
+    const labels: Record<ArAgingBucket, string> = {
+      CURRENT: 'Current',
+      DAYS_1_30: '1-30 Days',
+      DAYS_31_60: '31-60 Days',
+      DAYS_61_90: '61-90 Days',
+      DAYS_91_PLUS: '91+ Days',
+    };
+    return labels[bucket];
+  };
+
+  const getBucketColor = (bucket: ArAgingBucket): string => {
+    const colors: Record<ArAgingBucket, string> = {
+      CURRENT: 'text-gray-700',
+      DAYS_1_30: 'text-yellow-600',
+      DAYS_31_60: 'text-orange-600',
+      DAYS_61_90: 'text-red-600',
+      DAYS_91_PLUS: 'text-red-800',
+    };
+    return colors[bucket];
   };
 
   if (loading && !summary) {
@@ -161,6 +188,30 @@ export default function FinancePage() {
               </div>
             </Card.Content>
           </Card>
+        </div>
+      )}
+
+      {/* AR Aging Buckets (Phase 5 Sprint 2) */}
+      {agingSummary && (
+        <div className="mb-6">
+          <h3 className="mb-3 text-lg font-semibold text-gray-900">AR Aging Analysis</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {agingSummary.buckets.map((bucket) => (
+              <Card key={bucket.bucket}>
+                <Card.Content className="p-4">
+                  <div className="text-sm font-medium text-gray-500">
+                    {getBucketLabel(bucket.bucket)}
+                  </div>
+                  <div className={`mt-2 text-2xl font-semibold ${getBucketColor(bucket.bucket)}`}>
+                    {formatCurrency(bucket.outstanding)}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    {bucket.jobsCount} {bucket.jobsCount === 1 ? 'job' : 'jobs'}
+                  </div>
+                </Card.Content>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 

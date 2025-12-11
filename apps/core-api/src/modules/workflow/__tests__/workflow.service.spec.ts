@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { WorkflowService } from '../workflow.service';
+import { CustomerExperienceService } from '../../customer-experience/customer-experience.service';
 import { prisma } from '@greenenergy/db';
 
 // Mock Prisma
@@ -56,6 +57,12 @@ describe('WorkflowService', () => {
               if (key === 'JOBNIMBUS_API_KEY') return undefined;
               return defaultValue;
             }),
+          },
+        },
+        {
+          provide: CustomerExperienceService,
+          useValue: {
+            createMessage: jest.fn().mockResolvedValue({ id: 'mock-message-id' }),
           },
         },
       ],
