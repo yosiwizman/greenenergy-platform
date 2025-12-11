@@ -18,7 +18,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "turbo run clean && rm -rf node_modules",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "smoke:staging": "pnpm --filter @greenenergy/smoke-tests run build && pnpm --filter @greenenergy/smoke-tests run smoke:staging"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

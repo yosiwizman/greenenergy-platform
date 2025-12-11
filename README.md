@@ -87,6 +87,7 @@ pnpm lint         # Lint all code
 pnpm test         # Run all tests
 pnpm format       # Format code with Prettier
 pnpm typecheck    # Type-check all TypeScript code
+pnpm smoke:staging # Run staging smoke tests (requires env vars)
 ```
 
 ### Package-Specific
@@ -666,7 +667,7 @@ See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed
 
 ## 🚀 Deployment & Environments
 
-**Phase 3 Sprint 3**: Production-ready deployment strategy for Vercel (frontends) and Railway (backend + database).
+**Phase 3 Sprint 3 & 8**: Production-ready deployment strategy with automated smoke tests for operational readiness.
 
 **Architecture**:
 - **Frontends**: `customer-portal` and `internal-dashboard` deployed to Vercel
@@ -680,6 +681,30 @@ See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed
 - **Environment Variables**: Comprehensive `.env.example` files for all services
 - **Rollout Strategy**: Pre-deployment checklist, testing, and rollback procedures
 
+**Staging Smoke Tests** (Sprint 8):
+
+After deploying to staging/production, run automated health checks:
+
+```bash
+# 1. Set environment variables in .env or shell:
+STAGING_API_BASE_URL=https://your-api.railway.app
+STAGING_INTERNAL_DASHBOARD_URL=https://your-dashboard.vercel.app
+STAGING_CUSTOMER_PORTAL_URL=https://your-portal.vercel.app
+STAGING_INTERNAL_API_KEY=your-internal-api-key
+
+# 2. Run smoke tests:
+pnpm smoke:staging
+```
+
+The smoke test script validates:
+- ✅ API health endpoint
+- ✅ Command Center Overview API (with internal auth)
+- ✅ Workflow Rules API
+- ✅ Internal Dashboard pages (command-center, workflows)
+- ✅ Customer Portal root page
+
+All checks must pass before proceeding with manual verification.
+
 **Cost Estimates**:
 - Vercel Hobby: $0/month (2 projects, 100GB bandwidth)
 - Railway Starter: ~$5/month (API + PostgreSQL)
@@ -690,9 +715,11 @@ See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed
 - `apps/core-api/.dockerignore` - Optimized Docker context
 - `.env.example` - Consolidated environment variables for all services
 - `apps/internal-dashboard/.env.example` - Dashboard-specific env vars
+- `tools/smoke-tests/` - Staging smoke test harness
 
 **Documentation**:
-See **[Deployment & Environments Guide](docs/11-deployment-and-environments.md)** for complete deployment instructions, troubleshooting, and best practices.
+- **[Deployment & Environments Guide](docs/11-deployment-and-environments.md)** - Complete deployment instructions, troubleshooting, and best practices
+- **[Staging Smoke Tests & Go-Live Checklist](docs/16-staging-smoke-tests-and-go-live-checklist.md)** - Operational readiness playbook with smoke tests and troubleshooting
 
 ## 🤖 Workflow Automation Engine
 
@@ -952,8 +979,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - ✅ Sprint 4: AI Workflow Automation Engine v1 (8 rules, 6 departments, deduplication, JobNimbus integration, cron scheduling)
 - ✅ Sprint 5: Workflow Automation Dashboard & Observability (internal `/workflows` page, filtering, manual execution controls)
 - ✅ Sprint 6: Command Center & Role-Based Dashboards (unified operational overview, role views, jobs needing attention)
-- Sprint 7: Intelligent Dispatching (AI-driven crew scheduling, route optimization)
-- Sprint 8: Forecasting & Analytics (job completion predictions, resource demand forecasting)
+- ✅ Sprint 7: AI Dispatching & Field Optimization v1 (deterministic crew assignment, `/dispatch` dashboard, confidence scoring)
+- ✅ Sprint 8: Staging Smoke Tests & Go-Live Checklist (automated health checks, deployment playbook, operational readiness)
 
 ## 🧪 Testing
 

@@ -439,7 +439,33 @@ transpilePackages: ['@greenenergy/ui', '@greenenergy/shared-types']
 
 ---
 
-## 11. Next Steps
+## 11. Staging Smoke Tests
+
+**Phase 3 Sprint 8** introduced automated smoke tests for validating deployed environments.
+
+After deployment, run smoke tests to verify critical endpoints and pages:
+
+```bash
+# Set environment variables (in .env or shell)
+STAGING_API_BASE_URL=https://your-api.railway.app
+STAGING_INTERNAL_DASHBOARD_URL=https://your-dashboard.vercel.app
+STAGING_CUSTOMER_PORTAL_URL=https://your-portal.vercel.app
+STAGING_INTERNAL_API_KEY=your-internal-api-key
+
+# Run smoke tests
+pnpm smoke:staging
+```
+
+See **[Staging Smoke Tests & Go-Live Checklist](./16-staging-smoke-tests-and-go-live-checklist.md)** for:
+- Complete go-live checklist
+- Step-by-step deployment flow
+- Smoke test details and customization
+- Troubleshooting guide
+- Manual verification checklist
+
+---
+
+## 12. Next Steps
 
 After deployment is complete:
 

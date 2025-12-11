@@ -326,6 +326,15 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  tools/smoke-tests:
+    dependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.26
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
