@@ -1,11 +1,13 @@
-import { Controller, Get, Query, Param, UseGuards, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Query, Param, Body, UseGuards, Logger } from '@nestjs/common';
 import { FinanceService } from './finance.service';
+import { AccountingService } from '../accounting/accounting.service';
 import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
 import type {
   ArSummaryDTO,
   JobArDetailsDTO,
   JobArStatus,
   ArAgingSummaryDTO,
+  InvoiceDTO,
 } from '@greenenergy/shared-types';
 
 /**
@@ -17,7 +19,10 @@ import type {
 export class FinanceController {
   private readonly logger = new Logger(FinanceController.name);
 
-  constructor(private readonly financeService: FinanceService) {}
+  constructor(
+    private readonly financeService: FinanceService,
+    private readonly accountingService: AccountingService,
+  ) {}
 
   /**
    * GET /api/v1/finance/ar/summary
@@ -60,5 +65,43 @@ export class FinanceController {
   async getArAgingSummary(): Promise<ArAgingSummaryDTO> {
     this.logger.log('GET /api/v1/finance/ar/aging');
     return this.financeService.getArAgingSummary();
+  }
+
+  /**
+   * GET /api/v1/finance/ar/jobs/:jobId/invoices
+   * Returns list of invoices for a job (Phase 5 Sprint 3)
+   */
+  @Get('ar/jobs/:jobId/invoices')
+  async listInvoicesForJob(@Param('jobId') jobId: string): Promise<InvoiceDTO[]> {
+    this.logger.log(`GET /api/v1/finance/ar/jobs/${jobId}/invoices`);
+    return this.financeService.listInvoicesForJob(jobId);
+  }
+
+  /**
+   * POST /api/v1/finance/ar/jobs/:jobId/invoices
+   * Create an invoice for a job (Phase 5 Sprint 3)
+   */
+  @Post('ar/jobs/:jobId/invoices')
+  async createInvoiceForJob(
+    @Param('jobId') jobId: string,
+    @Body() body: { sendEmail?: boolean },
+  ): Promise<InvoiceDTO> {
+    this.logger.log(`POST /api/v1/finance/ar/jobs/${jobId}/invoices`);
+    return this.accountingService.createInvoiceForJob(jobId, {
+      sendEmail: body?.sendEmail,
+    });
+  }
+
+  /**
+   * GET /api/v1/finance/ar/jobs/:jobId/invoices/:invoiceId
+   * Returns a specific invoice for a job (Phase 5 Sprint 3)
+   */
+  @Get('ar/jobs/:jobId/invoices/:invoiceId')
+  async getInvoiceForJob(
+    @Param('jobId') jobId: string,
+    @Param('invoiceId') invoiceId: string,
+  ): Promise<InvoiceDTO | null> {
+    this.logger.log(`GET /api/v1/finance/ar/jobs/${jobId}/invoices/${invoiceId}`);
+    return this.financeService.getInvoiceForJob(jobId, invoiceId);
   }
 }

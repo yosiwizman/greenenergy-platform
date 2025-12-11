@@ -5,9 +5,10 @@ import { AccountingController } from './accounting.controller';
 import { QuickbooksClient } from './quickbooks.client';
 import { QuickbooksAuthService } from './quickbooks-auth.service';
 import { AccountingTasks } from './accounting.tasks';
+import { CustomerExperienceModule } from '../customer-experience/customer-experience.module';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, CustomerExperienceModule],
   controllers: [AccountingController],
   providers: [
     QuickbooksAuthService,

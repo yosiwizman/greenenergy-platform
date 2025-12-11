@@ -702,9 +702,237 @@ No new environment variables required. Uses existing:
 - Payment links in reminder emails
 - AR aging trend analysis
 
+## Invoice Creation & Invoicing Flow (Phase 5 Sprint 3)
+
+### Overview
+
+Phase 5 Sprint 3 extends the Finance module with **invoice creation capabilities**, allowing finance teams to generate invoices in QuickBooks directly from the platform and automatically notify customers via email.
+
+**Key Features:**
+- ✅ Create invoices in QuickBooks from the platform
+- ✅ Invoice data model synced with QuickBooks
+- ✅ Automated INVOICE_ISSUED email notifications
+- ✅ Finance API invoice endpoints
+- ✅ Invoice storage and retrieval
+- ✅ Primary invoice tracking per job
+
+### Data Model
+
+**Invoice Model:**
+
+```prisma
+model Invoice {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id])
+
+  externalId  String   @unique  // QuickBooks Invoice Id
+  number      String?          // Invoice number shown to customer
+  dueDate     DateTime?
+  totalAmount Decimal? @db.Decimal(18, 2)
+  balance     Decimal? @db.Decimal(18, 2)
+  status      String?          // 'OPEN' | 'PAID' | 'VOIDED'
+
+  publicUrl   String?  @db.Text // Optional "pay/view" URL from QB
+  metadata    Json?    @db.JsonB
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  financialSnapshots JobFinancialSnapshot[]
+
+  @@index([jobId])
+  @@index([externalId])
+  @@index([status])
+  @@map("invoices")
+}
+```
+
+**JobFinancialSnapshot Extension:**
+
+```prisma
+model JobFinancialSnapshot {
+  // ... existing fields ...
+
+  // Primary invoice reference (Phase 5 Sprint 3)
+  primaryInvoiceId String?
+  primaryInvoice   Invoice? @relation(fields: [primaryInvoiceId], references: [id])
+}
+```
+
+### API Endpoints
+
+#### GET /api/v1/finance/ar/jobs/:jobId/invoices
+
+List all invoices for a job.
+
+**Response:**
+```json
+[
+  {
+    "id": "inv_abc123",
+    "jobId": "job_xyz789",
+    "externalId": "QB-INV-1001",
+    "number": "INV-1001",
+    "dueDate": "2024-03-15T00:00:00.000Z",
+    "totalAmount": 50000,
+    "balance": 50000,
+    "status": "OPEN",
+    "publicUrl": null,
+    "createdAt": "2024-03-01T10:00:00.000Z",
+    "updatedAt": "2024-03-01T10:00:00.000Z"
+  }
+]
+```
+
+#### POST /api/v1/finance/ar/jobs/:jobId/invoices
+
+Create an invoice for a job in QuickBooks.
+
+**Request Body:**
+```json
+{
+  "sendEmail": true  // optional, defaults to true
+}
+```
+
+**Response:**
+```json
+{
+  "id": "inv_abc123",
+  "jobId": "job_xyz789",
+  "externalId": "QB-INV-1001",
+  "number": "INV-1001",
+  "dueDate": "2024-03-15T00:00:00.000Z",
+  "totalAmount": 50000,
+  "balance": 50000,
+  "status": "OPEN",
+  "publicUrl": null,
+  "createdAt": "2024-03-01T10:00:00.000Z",
+  "updatedAt": "2024-03-01T10:00:00.000Z"
+}
+```
+
+**Behavior:**
+1. Loads job with financial snapshot
+2. Determines invoice amount from `contractAmount`
+3. Calculates due date (14 days from today)
+4. Creates invoice in QuickBooks via API
+5. Persists invoice to database
+6. Updates `JobFinancialSnapshot.primaryInvoiceId`
+7. Sends INVOICE_ISSUED email (if `sendEmail !== false`)
+
+#### GET /api/v1/finance/ar/jobs/:jobId/invoices/:invoiceId
+
+Retrieve a specific invoice for a job.
+
+**Response:** Same as invoice object above, or `null` if not found.
+
+### Invoice Creation Flow
+
+**AccountingService.createInvoiceForJob():**
+
+```typescript
+async createInvoiceForJob(
+  jobId: string,
+  options?: { sendEmail?: boolean }
+): Promise<InvoiceDTO>
+```
+
+**Steps:**
+1. **Load Job Data:** Fetches job with contacts and financial snapshot
+2. **Determine Amount:** Uses `JobFinancialSnapshot.contractAmount` or defaults to $10,000
+3. **Calculate Due Date:** Today + 14 days
+4. **QuickBooks API Call:**
+   - Customer reference: `jobNimbusId` or `jobId`
+   - Line item: Single line with job description and amount
+   - Due date: Calculated date
+5. **Persist Invoice:** Upserts `Invoice` record with QB invoice data
+6. **Update Financial Snapshot:** Links `primaryInvoiceId` and `invoiceDueDate`
+7. **Send Email (Optional):**
+   - Creates `CustomerMessage` with type `INVOICE_ISSUED`
+   - Channel: `EMAIL`, Source: `SYSTEM`
+   - Email includes: invoice amount, due date, job reference
+   - Uses CX Engine for email delivery
+
+### Customer Email Notification
+
+**Message Type:** `INVOICE_ISSUED`
+**Channel:** `EMAIL`
+**Source:** `SYSTEM`
+
+**Email Template:**
+```
+Your invoice for Job J-1001 has been issued.
+
+Invoice Amount: $50,000.00
+Due Date: March 15, 2024
+
+[If publicUrl exists:]
+You can view your invoice online here: [URL]
+
+If you have any questions, please contact our office.
+
+Thank you for your business!
+```
+
+**CX Engine Integration:**
+- Email is sent via `CustomerExperienceService.createMessageForJob()`
+- Message is stored in `CustomerMessage` table
+- Email delivery handled by `EmailNotificationService` (Resend)
+- Failures are logged but don't prevent invoice creation
+
+### Testing
+
+**AccountingService Tests:**
+- Invoice creation success with QuickBooks
+- Email sending (default `true`)
+- Email skipping when `sendEmail = false`
+- Error handling for QB failures
+- Job not found errors
+
+**FinanceService Tests:**
+- List invoices for job
+- Get specific invoice
+- Empty invoice lists
+- Job not found errors
+
+**FinanceController Tests:**
+- Route parameter parsing
+- Service method delegation
+- Request body handling
+
+### Configuration
+
+No new environment variables required. Uses existing:
+- QuickBooks OAuth2 credentials
+- CX Engine + Resend email service
+- Internal API key for endpoint protection
+
+### Future Enhancements
+
+**Phase 5 Sprint 4+:**
+- Multi-line item invoices
+- Custom invoice templates
+- Payment processor integration
+- Invoice PDF generation
+- Bulk invoice creation
+- Invoice status synchronization
+- Payment application to invoices
+
 ## Changelog
 
-### Phase 5 Sprint 2 (Current)
+### Phase 5 Sprint 3 (Current)
+
+- ✅ Invoice data model and Prisma schema
+- ✅ QuickBooks invoice creation API
+- ✅ Invoice persistence and retrieval
+- ✅ Finance API invoice endpoints
+- ✅ INVOICE_ISSUED email notifications
+- ✅ Primary invoice tracking in JobFinancialSnapshot
+- ✅ Test coverage for invoice creation and retrieval
+
+### Phase 5 Sprint 2
 
 - ✅ AR aging buckets with 5 categories
 - ✅ Automated payment reminder workflow

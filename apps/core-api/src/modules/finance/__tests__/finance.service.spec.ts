@@ -10,8 +10,15 @@ jest.mock('@greenenergy/db', () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
     },
+    job: {
+      findUnique: jest.fn(),
+    },
     payment: {
       findMany: jest.fn(),
+    },
+    invoice: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
   },
 }));
@@ -443,6 +450,127 @@ describe('FinanceService', () => {
         expect(bucket.outstanding).toBe(0);
         expect(bucket.jobsCount).toBe(0);
       });
+    });
+  });
+
+  describe('listInvoicesForJob (Phase 5 Sprint 3)', () => {
+    it('should return list of invoices for a job', async () => {
+      const mockJob = {
+        id: 'job1',
+        jobNimbusId: 'J-1001',
+        customerName: 'John Doe',
+      };
+
+      const mockInvoices = [
+        {
+          id: 'inv1',
+          jobId: 'job1',
+          externalId: 'QB-INV-1',
+          number: 'INV-001',
+          dueDate: new Date('2024-03-01'),
+          totalAmount: 50000,
+          balance: 50000,
+          status: 'OPEN',
+          publicUrl: null,
+          createdAt: new Date('2024-02-01'),
+          updatedAt: new Date('2024-02-01'),
+        },
+        {
+          id: 'inv2',
+          jobId: 'job1',
+          externalId: 'QB-INV-2',
+          number: 'INV-002',
+          dueDate: new Date('2024-04-01'),
+          totalAmount: 25000,
+          balance: 0,
+          status: 'PAID',
+          publicUrl: null,
+          createdAt: new Date('2024-03-01'),
+          updatedAt: new Date('2024-03-15'),
+        },
+      ];
+
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.invoice.findMany as jest.Mock).mockResolvedValue(mockInvoices);
+
+      const result = await service.listInvoicesForJob('job1');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]!.id).toBe('inv1');
+      expect(result[0]!.number).toBe('INV-001');
+      expect(result[0]!.totalAmount).toBe(50000);
+      expect(result[1]!.id).toBe('inv2');
+      expect(result[1]!.status).toBe('PAID');
+
+      expect(prisma.invoice.findMany).toHaveBeenCalledWith({
+        where: { jobId: 'job1' },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should throw NotFoundException if job not found', async () => {
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.listInvoicesForJob('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should return empty array if no invoices exist', async () => {
+      const mockJob = {
+        id: 'job1',
+        jobNimbusId: 'J-1001',
+        customerName: 'John Doe',
+      };
+
+      (prisma.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.invoice.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.listInvoicesForJob('job1');
+
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('getInvoiceForJob (Phase 5 Sprint 3)', () => {
+    it('should return invoice if found', async () => {
+      const mockInvoice = {
+        id: 'inv1',
+        jobId: 'job1',
+        externalId: 'QB-INV-1',
+        number: 'INV-001',
+        dueDate: new Date('2024-03-01'),
+        totalAmount: 50000,
+        balance: 50000,
+        status: 'OPEN',
+        publicUrl: null,
+        createdAt: new Date('2024-02-01'),
+        updatedAt: new Date('2024-02-01'),
+      };
+
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(mockInvoice);
+
+      const result = await service.getInvoiceForJob('job1', 'inv1');
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe('inv1');
+      expect(result?.number).toBe('INV-001');
+      expect(result?.totalAmount).toBe(50000);
+
+      expect(prisma.invoice.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'inv1',
+          jobId: 'job1',
+        },
+      });
+    });
+
+    it('should return null if invoice not found', async () => {
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const result = await service.getInvoiceForJob('job1', 'non-existent-inv');
+
+      expect(result).toBeNull();
     });
   });
 });

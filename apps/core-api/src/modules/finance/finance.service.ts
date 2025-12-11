@@ -9,6 +9,7 @@ import type {
   JobArStatus,
   ArAgingSummaryDTO,
   ArAgingBucketData,
+  InvoiceDTO,
 } from '@greenenergy/shared-types';
 
 @Injectable()
@@ -282,6 +283,46 @@ export class FinanceService {
   }
 
   /**
+   * List all invoices for a job (Phase 5 Sprint 3)
+   */
+  async listInvoicesForJob(jobId: string): Promise<InvoiceDTO[]> {
+    this.logger.log(`Listing invoices for job: ${jobId}`);
+
+    // Verify job exists
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    if (!job) {
+      throw new NotFoundException(`Job with ID ${jobId} not found`);
+    }
+
+    const invoices = await prisma.invoice.findMany({
+      where: { jobId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return invoices.map((invoice) => this.mapInvoiceToDTO(invoice));
+  }
+
+  /**
+   * Get a specific invoice for a job (Phase 5 Sprint 3)
+   */
+  async getInvoiceForJob(jobId: string, invoiceId: string): Promise<InvoiceDTO | null> {
+    this.logger.log(`Getting invoice ${invoiceId} for job: ${jobId}`);
+
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        jobId,
+      },
+    });
+
+    if (!invoice) {
+      return null;
+    }
+
+    return this.mapInvoiceToDTO(invoice);
+  }
+
+  /**
    * Map Prisma Payment to DTO
    */
   private mapPaymentToDTO(payment: any): PaymentDTO {
@@ -296,6 +337,25 @@ export class FinanceService {
       status: payment.status,
       referenceNumber: payment.referenceNumber || null,
       notes: payment.notes || null,
+    };
+  }
+
+  /**
+   * Map Prisma Invoice to DTO (Phase 5 Sprint 3)
+   */
+  private mapInvoiceToDTO(invoice: any): InvoiceDTO {
+    return {
+      id: invoice.id,
+      jobId: invoice.jobId,
+      externalId: invoice.externalId,
+      number: invoice.number,
+      dueDate: invoice.dueDate ? invoice.dueDate.toISOString() : null,
+      totalAmount: invoice.totalAmount ? Number(invoice.totalAmount) : null,
+      balance: invoice.balance ? Number(invoice.balance) : null,
+      status: invoice.status,
+      publicUrl: invoice.publicUrl,
+      createdAt: invoice.createdAt.toISOString(),
+      updatedAt: invoice.updatedAt.toISOString(),
     };
   }
 }
