@@ -882,6 +882,59 @@ See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed
 
 See **[Forecasting & Analytics](docs/17-forecasting-and-analytics.md)** for detailed documentation.
 
+## 📧 Executive Weekly Digest
+
+**Phase 6 Sprint 2**: Automated weekly email digest summarizing AR, forecast, risk, and operational metrics for business owners.
+
+**Features**:
+
+- ✅ **Automated Weekly Email**: Sent every Monday at 7:00 AM to configured recipients
+- ✅ **Comprehensive Metrics**: Finance/AR summary, aging buckets, cashflow forecast, pipeline, risk indicators
+- ✅ **Internal Dashboard Preview**: `/exec-report` page for real-time digest preview
+- ✅ **Manual Trigger**: Send digest on-demand via dashboard or API
+- ✅ **Data Composition**: Reuses Finance, Forecast, Command Center, and Workflow services
+- ✅ **Scheduled Cron Job**: Automatic delivery every Monday (configurable)
+
+**Digest Contents**:
+
+- **Key Metrics**:
+  - High-risk jobs count
+  - Open safety incidents
+  - Overdue AR jobs
+  - Workflows triggered (during period)
+- **Finance & AR Summary**:
+  - Total outstanding, paid, contract value
+  - Job payment status breakdown (Paid, Partially Paid, Unpaid, Overdue)
+- **AR Aging Analysis**:
+  - 5 aging buckets (Current, 1-30, 31-60, 61-90, 91+ days)
+- **Cashflow & Pipeline Forecast**:
+  - 12-week cashflow outlook
+  - Weighted pipeline by stage
+  - Top pipeline stages by value
+
+**API Endpoints**:
+
+```bash
+GET  /api/v1/exec-report/weekly      # Preview digest
+POST /api/v1/exec-report/weekly/send # Send digest email
+```
+
+**Configuration**:
+
+```env
+EXEC_DIGEST_RECIPIENTS="owner@yourdomain.com,partner@yourdomain.com"
+```
+
+**Dashboard**:
+
+- `/exec-report` - Visual digest dashboard with "Refresh" and "Send Email Now" buttons
+- Two-column layout: Finance/AR (left), Forecast (right)
+- Color-coded metric cards (red for risk, green for positive, blue for pipeline)
+
+**Period Calculation**: Digest covers the previous week (Monday–Sunday). Workflow counts are for that specific period; all other metrics are current snapshots.
+
+See **[Executive Digest & Reporting](docs/18-executive-digest-and-reporting.md)** for detailed documentation.
+
 ## 🚀 Deployment & Environments
 
 **Phase 3 Sprint 3 & 8**: Production-ready deployment strategy with automated smoke tests for operational readiness.

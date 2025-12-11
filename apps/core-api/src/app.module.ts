@@ -22,6 +22,7 @@ import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { CustomerExperienceModule } from './modules/customer-experience/customer-experience.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { ForecastModule } from './modules/forecast/forecast.module';
+import { ExecutiveReportModule } from './modules/executive-report/executive-report.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -51,6 +52,7 @@ import { HealthController } from './health.controller';
     CustomerExperienceModule,
     FinanceModule,
     ForecastModule,
+    ExecutiveReportModule,
   ],
   controllers: [HealthController],
 })
