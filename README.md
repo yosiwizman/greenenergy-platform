@@ -720,6 +720,80 @@ QB_SYNC_ENABLED=true                           # Enable automatic daily sync at 
 
 See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation.
 
+## 📊 Finance & AR Dashboard
+
+Phase 5 Sprint 1 extends the QuickBooks integration to sync payment data and provide real-time visibility into Accounts Receivable (AR) status.
+
+**Features**:
+
+- ✅ Payment sync from QuickBooks linked to invoices
+- ✅ AR status computation (PAID, PARTIALLY_PAID, UNPAID, OVERDUE)
+- ✅ Amount paid and outstanding tracking per job
+- ✅ Invoice due date tracking
+- ✅ Finance API endpoints for AR visibility
+- ✅ Finance dashboard with AR summary and job-level details
+- ✅ Integration with daily QuickBooks sync
+
+**AR Status Logic**:
+
+| Status | Condition |
+|--------|----------|
+| PAID | Outstanding ≤ 0 (fully paid) |
+| PARTIALLY_PAID | Some payment made, outstanding > 0 |
+| UNPAID | No payments, outstanding > 0 |
+| OVERDUE | Due date passed, outstanding > 0 (takes precedence) |
+
+**API Endpoints**:
+
+```
+GET   /api/v1/finance/ar/summary           # Aggregated AR metrics
+GET   /api/v1/finance/ar/jobs              # List jobs with AR details (optional ?status filter)
+GET   /api/v1/finance/ar/jobs/:jobId       # AR details for specific job
+```
+
+**Dashboard Routes**:
+
+- `/finance` - AR dashboard with summary cards (outstanding, paid, overdue) and filterable jobs table
+
+**Summary Cards**:
+- Total Outstanding (red)
+- Total Paid (green)
+- Total Contract Value (blue)
+- Partially Paid count (amber)
+
+**Jobs Table**:
+- Job number, customer name, status
+- Contract amount, amount paid, outstanding
+- AR status badge (color-coded: GREEN=Paid, BLUE=Partially Paid, YELLOW=Unpaid, RED=Overdue)
+- Invoice due date, last payment date
+- Payment history with details (amount, method, reference)
+
+**Data Model**:
+
+New `Payment` model tracks individual payments:
+- Linked to Job and QuickBooks invoice
+- Amount, received date, payment method
+- Reference numbers (check #, transaction ID, etc.)
+
+Extended `JobFinancialSnapshot` with AR fields:
+- `amountPaid`, `amountOutstanding`, `arStatus`
+- `lastPaymentAt`, `invoiceDueDate`
+
+**Integration**:
+- Daily QuickBooks sync automatically updates AR data
+- Payment records upserted from QB (keyed by external ID)
+- AR status computed based on payment data and due dates
+- No additional configuration required beyond existing QB setup
+
+**Future Enhancements** (Phase 5 Sprint 2+):
+- Invoice generation from platform
+- Payment reminder automation
+- AR aging reports (30/60/90 days)
+- Email notifications for overdue invoices
+- AI-powered payment forecasting
+
+See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation (includes AR section).
+
 ## 🚀 Deployment & Environments
 
 **Phase 3 Sprint 3 & 8**: Production-ready deployment strategy with automated smoke tests for operational readiness.

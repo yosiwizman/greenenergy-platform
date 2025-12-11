@@ -20,6 +20,7 @@ import { WorkflowModule } from './modules/workflow/workflow.module';
 import { CommandCenterModule } from './modules/command-center/command-center.module';
 import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { CustomerExperienceModule } from './modules/customer-experience/customer-experience.module';
+import { FinanceModule } from './modules/finance/finance.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -47,6 +48,7 @@ import { HealthController } from './health.controller';
     CommandCenterModule,
     DispatchModule,
     CustomerExperienceModule,
+    FinanceModule,
   ],
   controllers: [HealthController],
 })

@@ -42,6 +42,7 @@ model Job {
   subcontractorAssignments JobSubcontractorAssignment[]
   financialSnapshot JobFinancialSnapshot?
   customerMessages CustomerMessage[]
+  payments Payment[]
 
   @@index([jobNimbusId])
   @@index([status])
@@ -482,12 +483,20 @@ model JobFinancialSnapshot {
   accountingSource    String?   // 'PLACEHOLDER' | 'QUICKBOOKS' | 'MANUAL'
   accountingLastSyncAt DateTime?
 
+  // AR tracking (Phase 5 Sprint 1)
+  amountPaid        Float?    @default(0)
+  amountOutstanding Float?    @default(0)
+  arStatus          String?   // 'PAID' | 'PARTIALLY_PAID' | 'UNPAID' | 'OVERDUE'
+  lastPaymentAt     DateTime?
+  invoiceDueDate    DateTime?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([riskLevel])
   @@index([marginPercent])
   @@index([accountingSource])
+  @@index([arStatus])
   @@map("job_financial_snapshots")
 }
 
@@ -519,4 +528,25 @@ model CustomerMessage {
   @@index([jobId, createdAt])
   @@index([type])
   @@map("customer_messages")
+}
+
+model Payment {
+  id                 String   @id @default(cuid())
+  jobId              String
+  job                Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  externalId         String   @unique // QuickBooks payment ID
+  externalInvoiceId  String?  // QuickBooks invoice ID
+  amount             Float
+  receivedAt         DateTime
+  paymentMethod      String?  // 'CREDIT_CARD' | 'CHECK' | 'ACH' | 'WIRE' | 'OTHER'
+  status             String   // 'APPLIED' | 'PENDING' | 'REVERSED'
+  referenceNumber    String?  // Check number, transaction ID, etc.
+  notes              String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([receivedAt])
+  @@index([status])
+  @@map("payments")
 }
