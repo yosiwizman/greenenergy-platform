@@ -230,14 +230,22 @@ Same steps as Customer Portal, but:
 
 ### 5.3 Deploy Core API (NestJS)
 
+**Railway Configuration:**
+
+The repository includes a **version-controlled `railway.json`** at the repo root that configures Railway deployment:
+- Points to `apps/core-api/Dockerfile` (no need to configure root directory manually)
+- Defines `startCommand` as `node dist/main.js`
+- Specifies watch patterns for automatic rebuilds when core-api or shared packages change
+
+Railway automatically detects and uses `railway.json` as the canonical configuration source.
+
 **Via Railway Dashboard:**
 
 1. In the same project, click **+ New** → **GitHub Repo**
 2. Authorize Railway to access your `greenenergy-platform` repo
-3. Select the repo and configure:
-   - **Root Directory**: `apps/core-api` *(Railway supports monorepos)*
-   - **Build Command**: Leave empty (uses Dockerfile)
-   - **Start Command**: Leave empty (Dockerfile's CMD is used)
+3. Select the repo — Railway will automatically detect `railway.json` and use it
+   - **No need to configure root directory** — `railway.json` handles this
+   - **No need to set build/start commands** — Dockerfile and `railway.json` handle this
 4. Add Environment Variables (see section 3.1 above):
    - `NODE_ENV=production`
    - `PORT=3000` *(Railway will override with its own `PORT` if needed)*
@@ -245,7 +253,7 @@ Same steps as Customer Portal, but:
    - `JOBNIMBUS_BASE_URL`, `JOBNIMBUS_API_KEY`, etc.
    - `QB_ENABLED`, `QB_CLIENT_ID`, `QB_CLIENT_SECRET`, `QB_REFRESH_TOKEN`, etc.
    - `PORTAL_BASE_URL`, `PORTAL_ORIGIN`, `INTERNAL_API_KEY`
-5. Railway will auto-detect the Dockerfile and build
+5. Railway will build using the Dockerfile at `apps/core-api/Dockerfile`
 6. Once deployed, Railway assigns a public URL: `https://greenenergy-production.up.railway.app`
 7. Update Vercel environment variables with this URL
 
