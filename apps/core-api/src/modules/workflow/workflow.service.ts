@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { prisma } from '@greenenergy/db';
 import { JobNimbusClient } from '@greenenergy/jobnimbus-sdk';
+import { differenceInCalendarDays } from 'date-fns';
+import { CustomerExperienceService } from '../customer-experience/customer-experience.service';
 import type {
   WorkflowActionLogDTO,
   WorkflowRuleSummaryDTO,
@@ -32,7 +34,10 @@ export class WorkflowService {
   private jobNimbusClient: JobNimbusClient | null = null;
   private rules: WorkflowRule[] = [];
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private customerExperienceService: CustomerExperienceService,
+  ) {
     const baseUrl = this.configService.get<string>('JOBNIMBUS_BASE_URL');
     const apiKey = this.configService.get<string>('JOBNIMBUS_API_KEY');
 
@@ -133,6 +138,15 @@ export class WorkflowService {
         enabled: true,
         cooldownDays: 5,
         evaluate: this.evaluateFinanceMissingContract.bind(this),
+      },
+      {
+        key: 'FINANCE_AR_OVERDUE_PAYMENT_REMINDER',
+        name: 'Finance AR Overdue Payment Reminder',
+        description: 'Send automated payment reminder for overdue invoices (7+ days overdue)',
+        department: 'FINANCE',
+        enabled: true,
+        cooldownDays: 7,
+        evaluate: this.evaluateArOverduePaymentReminder.bind(this),
       },
     ];
 
@@ -628,6 +642,111 @@ export class WorkflowService {
     return this.createActionLog(jobId, 'FINANCE_MISSING_CONTRACT_AMOUNT', 'JOBNIMBUS_TASK', {
       status: job.status,
       accountingSource: financial?.accountingSource || null,
+    });
+  }
+
+  /**
+   * FINANCE: AR overdue payment reminder (Phase 5 Sprint 2)
+   */
+  private async evaluateArOverduePaymentReminder(
+    jobId: string
+  ): Promise<WorkflowActionLogDTO | null> {
+    const MIN_DAYS_OVERDUE = 7; // Only send reminders for invoices at least 7 days overdue
+
+    // Get job and financial snapshot
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        financialSnapshot: true,
+      },
+    });
+
+    if (!job || !job.jobNimbusId) return null;
+
+    const financial = job.financialSnapshot;
+    if (!financial) return null;
+
+    // Check if job has overdue AR
+    if (financial.arStatus !== 'OVERDUE') return null;
+    if (!financial.amountOutstanding || financial.amountOutstanding <= 0) return null;
+    if (!financial.invoiceDueDate) return null;
+
+    // Check if at least MIN_DAYS_OVERDUE days overdue
+    const daysOverdue = differenceInCalendarDays(new Date(), financial.invoiceDueDate);
+    if (daysOverdue < MIN_DAYS_OVERDUE) return null;
+
+    // Check dedup (cooldown)
+    if (await this.hasRecentAction(jobId, 'FINANCE_AR_OVERDUE_PAYMENT_REMINDER', 7)) {
+      return null;
+    }
+
+    this.logger.log(
+      `AR payment reminder triggered for job ${jobId}: $${financial.amountOutstanding} overdue by ${daysOverdue} days`
+    );
+
+    // Format currency
+    const formatCurrency = (amount: number) =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+
+    const outstandingFormatted = formatCurrency(financial.amountOutstanding);
+
+    // Create templated payment reminder email via CX Engine
+    const reminderTitle = 'Friendly reminder about your outstanding balance';
+    const reminderBody = `Hi${job.customerName ? ' ' + job.customerName : ''},
+
+We hope your solar installation project is going well! This is a friendly reminder that we have an outstanding balance on your account.
+
+**Outstanding Amount:** ${outstandingFormatted}
+**Invoice Due Date:** ${financial.invoiceDueDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+If you've already sent payment, please disregard this message. Otherwise, please contact our office at your earliest convenience to arrange payment.
+
+Thank you for choosing us for your solar energy needs!
+
+Best regards,
+Your Green Energy Team
+
+---
+*Questions? Reply to this email or give us a call.*`;
+
+    try {
+      // Create CX message with EMAIL channel and sendEmail=true
+      await this.customerExperienceService.createMessageForJob(jobId, {
+        type: 'PAYMENT_REMINDER',
+        channel: 'EMAIL',
+        source: 'SYSTEM',
+        title: reminderTitle,
+        body: reminderBody,
+        sendEmail: true,
+      });
+
+      this.logger.log(
+        `Payment reminder email sent for job ${jobId}`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send payment reminder email for job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
+      );
+      // Continue with JobNimbus task even if email fails
+    }
+
+    // Also create JobNimbus internal task for follow-up
+    await this.createJobNimbusTask(
+      job.jobNimbusId,
+      '💰 Follow up on overdue payment',
+      `Outstanding balance: ${outstandingFormatted}, ${daysOverdue} days overdue. Automated reminder sent to customer. Follow up if no response within 3 days.`,
+      3
+    );
+
+    return this.createActionLog(jobId, 'FINANCE_AR_OVERDUE_PAYMENT_REMINDER', 'JOBNIMBUS_TASK', {
+      amountOutstanding: financial.amountOutstanding,
+      daysOverdue,
+      invoiceDueDate: financial.invoiceDueDate.toISOString(),
     });
   }
 

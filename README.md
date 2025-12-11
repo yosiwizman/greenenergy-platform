@@ -785,14 +785,23 @@ Extended `JobFinancialSnapshot` with AR fields:
 - AR status computed based on payment data and due dates
 - No additional configuration required beyond existing QB setup
 
-**Future Enhancements** (Phase 5 Sprint 2+):
-- Invoice generation from platform
-- Payment reminder automation
-- AR aging reports (30/60/90 days)
-- Email notifications for overdue invoices
-- AI-powered payment forecasting
+**Phase 5 Sprint 2 Extensions**:
 
-See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation (includes AR section).
+- ✅ **AR Aging Buckets**: 5 categories (CURRENT, 1-30, 31-60, 61-90, 91+ days overdue)
+- ✅ **Automated Payment Reminders**: Email reminders for invoices 7+ days overdue
+- ✅ **Aging Dashboard**: Visual display of outstanding amounts by aging bucket
+- ✅ **Workflow Integration**: Payment reminders triggered via workflow engine with 7-day cooldown
+- ✅ `GET /api/v1/finance/ar/aging` - Aging summary endpoint
+
+**Future Enhancements** (Phase 5 Sprint 3+):
+- Invoice generation from platform
+- Escalation reminders (multiple stages)
+- SMS reminders
+- Payment links in emails
+- AI-powered payment forecasting
+- Payment processor integration (Stripe, Square)
+
+See **[Accounting Integration](docs/12-accounting-integration.md)** for detailed documentation (includes AR & aging sections).
 
 ## 🚀 Deployment & Environments
 
@@ -874,6 +883,7 @@ All checks must pass before proceeding with manual verification.
 6. **WARRANTY_EXPIRING_SOON** - Warranties expiring within 30 days (14-day cooldown)
 7. **FINANCE_LOW_MARGIN_HIGH_RISK_JOB** - Jobs with <10% margin AND HIGH risk (7-day cooldown)
 8. **FINANCE_MISSING_CONTRACT_AMOUNT** - Active jobs missing contract amounts (5-day cooldown)
+9. **FINANCE_AR_OVERDUE_PAYMENT_REMINDER** - Automated payment reminders for invoices 7+ days overdue (7-day cooldown) *Phase 5 Sprint 2*
 
 **API Endpoints**:
 

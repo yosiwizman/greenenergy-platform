@@ -1,7 +1,12 @@
 import { Controller, Get, Query, Param, UseGuards, Logger } from '@nestjs/common';
 import { FinanceService } from './finance.service';
 import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
-import type { ArSummaryDTO, JobArDetailsDTO, JobArStatus } from '@greenenergy/shared-types';
+import type {
+  ArSummaryDTO,
+  JobArDetailsDTO,
+  JobArStatus,
+  ArAgingSummaryDTO,
+} from '@greenenergy/shared-types';
 
 /**
  * Finance API Controller (Phase 5 Sprint 1)
@@ -45,5 +50,15 @@ export class FinanceController {
   async getJobArDetails(@Param('jobId') jobId: string): Promise<JobArDetailsDTO> {
     this.logger.log(`GET /api/v1/finance/ar/jobs/${jobId}`);
     return this.financeService.getJobArDetails(jobId);
+  }
+
+  /**
+   * GET /api/v1/finance/ar/aging
+   * Returns AR aging summary with buckets (Phase 5 Sprint 2)
+   */
+  @Get('ar/aging')
+  async getArAgingSummary(): Promise<ArAgingSummaryDTO> {
+    this.logger.log('GET /api/v1/finance/ar/aging');
+    return this.financeService.getArAgingSummary();
   }
 }

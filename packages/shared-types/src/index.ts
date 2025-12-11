@@ -836,6 +836,27 @@ export interface ArSummaryDTO {
   jobsOverdue: number;
 }
 
+// AR Aging Types (Phase 5 Sprint 2)
+export enum ArAgingBucket {
+  CURRENT = 'CURRENT',           // not yet due
+  DAYS_1_30 = 'DAYS_1_30',       // 1-30 days overdue
+  DAYS_31_60 = 'DAYS_31_60',     // 31-60 days overdue
+  DAYS_61_90 = 'DAYS_61_90',     // 61-90 days overdue
+  DAYS_91_PLUS = 'DAYS_91_PLUS', // 91+ days overdue
+}
+
+export interface ArAgingBucketData {
+  bucket: ArAgingBucket;
+  outstanding: number;
+  jobsCount: number;
+}
+
+export interface ArAgingSummaryDTO {
+  generatedAt: string; // ISO timestamp
+  totalOutstanding: number;
+  buckets: ArAgingBucketData[];
+}
+
 export interface JobProfitabilityDTO {
   jobId: string;
   jobNumber?: string | null;
@@ -1030,7 +1051,7 @@ export interface DispatchOverviewDTO {
 }
 
 // Customer Experience Engine Types (Phase 4 Sprint 1)
-export type CustomerMessageType = 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC';
+export type CustomerMessageType = 'STATUS_UPDATE' | 'ETA_UPDATE' | 'GENERIC' | 'PAYMENT_REMINDER';
 
 export type CustomerMessageChannel = 'PORTAL' | 'EMAIL' | 'SMS';
 
