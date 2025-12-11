@@ -21,6 +21,7 @@ import { CommandCenterModule } from './modules/command-center/command-center.mod
 import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { CustomerExperienceModule } from './modules/customer-experience/customer-experience.module';
 import { FinanceModule } from './modules/finance/finance.module';
+import { ForecastModule } from './modules/forecast/forecast.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -49,6 +50,7 @@ import { HealthController } from './health.controller';
     DispatchModule,
     CustomerExperienceModule,
     FinanceModule,
+    ForecastModule,
   ],
   controllers: [HealthController],
 })
