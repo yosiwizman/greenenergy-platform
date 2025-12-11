@@ -236,10 +236,130 @@ curl -X POST http://localhost:3000/api/v1/cx/jobs/<jobId>/messages \
 - Email failures logged but don't break message creation
 - Plain-text emails (no tracking pixels, no HTML injection risks)
 
+## SMS Channel & Notifications (Phase 7 Sprint 1)
+
+**Status**: ✅ Implemented
+
+The CX Engine now supports sending transactional SMS messages via the SMS channel using Twilio as the SMS provider.
+
+### Behavior
+
+- Messages are **always stored** in the CustomerMessage timeline
+- SMS is **only sent** when:
+  - `channel === 'SMS'`
+  - `sendSms === true` (in CreateCustomerMessageInput)
+  - Customer phone can be resolved from Contact
+- If no customer phone is found:
+  - System logs a warning
+  - SMS sending is skipped gracefully
+  - Message is still stored in the timeline
+- SMS body is automatically **truncated to ~300 characters** (2 SMS segments) to keep costs reasonable
+
+### SMS Provider Configuration
+
+**Environment Variables** (optional; required for SMS sending):
+
+```env
+NOTIFICATIONS_SMS_PROVIDER="twilio"           # SMS provider (currently only 'twilio' supported)
+TWILIO_ACCOUNT_SID="your_twilio_account_sid"  # Twilio Account SID
+TWILIO_AUTH_TOKEN="your_twilio_auth_token"    # Twilio Auth Token
+TWILIO_FROM_NUMBER="+1XXXXXXXXXX"             # Verified Twilio phone number
+```
+
+**Provider Setup**:
+
+1. Sign up at [twilio.com](https://www.twilio.com)
+2. Purchase a phone number or use trial number
+3. Get your Account SID and Auth Token from console
+4. Add environment variables to staging/production environments
+5. **Important**: Never commit credentials to git
+
+### SMS Service Architecture
+
+**NotificationsModule** (`apps/core-api/src/modules/notifications/`):
+
+- `SmsNotificationService`: Provider-agnostic SMS service
+  - Wraps Twilio SDK behind clean interface
+  - No-op behavior when credentials missing (logs warning, doesn't throw)
+  - Can be swapped to different providers (AWS SNS, Vonage) in future
+  - Automatically handles SMS length limits
+
+**Customer Phone Resolution**:
+
+1. Primary contact with phone (Contact.isPrimary = true)
+2. Any contact with phone
+
+### SMS Content Format
+
+**Body** (plain text, ~300 chars max):
+
+```
+<messageTitle>
+
+<messageBody (truncated if needed)>
+
+- Green Energy Solar
+```
+
+### Usage Example
+
+**Create message with SMS sending**:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/cx/jobs/<jobId>/messages \
+  -H "Content-Type: application/json" \
+  -H "x-internal-api-key: your-internal-api-key" \
+  -d '{
+    "type": "PAYMENT_REMINDER",
+    "channel": "SMS",
+    "title": "Payment Reminder",
+    "body": "You have an outstanding balance. Please contact us to arrange payment.",
+    "sendSms": true
+  }'
+```
+
+### Testing
+
+**Unit Tests** (`apps/core-api/src/modules/notifications/__tests__/sms-notification.service.spec.ts`):
+- Tests with valid Twilio configuration
+- Tests with missing Account SID/Auth Token (no-op behavior)
+- Tests with missing FROM number (no-op behavior)
+- Tests with unsupported provider (no-op behavior)
+- All tests mock Twilio SDK (no real HTTP calls)
+
+**Manual Testing** (staging/local with valid credentials):
+1. Set up Twilio account and purchase/verify phone number
+2. Add environment variables to `.env`
+3. Create message with `channel: 'SMS'` and `sendSms: true`
+4. Verify SMS received at customer phone
+5. Check logs for SMS sending confirmation
+
+### Files Added (Phase 7 Sprint 1)
+
+**Backend**:
+- `apps/core-api/src/modules/notifications/sms-notification.service.ts` (new)
+- `apps/core-api/src/modules/notifications/__tests__/sms-notification.service.spec.ts` (new)
+- `apps/core-api/src/modules/notifications/notifications.module.ts` (updated: exports SmsNotificationService)
+- `apps/core-api/src/modules/customer-experience/customer-experience.service.ts` (updated: integrates SMS sending)
+
+**Shared Types**:
+- `packages/shared-types/src/index.ts` (updated: added `sendSms?: boolean` to CreateCustomerMessageInput)
+
+**Configuration**:
+- `apps/core-api/.env.example` (updated: added SMS notification env vars)
+
+### Security & Best Practices
+
+- **Credentials stored in environment variables only** (never in code/git)
+- SMS provider credentials secured in Railway/Vercel secrets
+- Graceful degradation: missing config doesn't crash production
+- SMS failures logged but don't break message creation
+- SMS length limits enforced to control costs
+- Plain-text SMS only (no marketing/bulk messaging)
+
 ## Future Enhancements
 
-**Phase 4, Sprint 3+ (Planned)**:
-- SMS delivery channel (Twilio integration)
+**Phase 7, Sprint 2+ (Planned)**:
 - HTML email templates with branding
 - Message templates: Predefined templates for common scenarios
 - Bulk messaging: Send updates to all customers with active jobs
@@ -247,6 +367,7 @@ curl -X POST http://localhost:3000/api/v1/cx/jobs/<jobId>/messages \
 - Webhooks: Trigger messages based on job status changes or workflow completions
 - Analytics: Track read rates, response times, customer satisfaction
 - Email open tracking and click analytics
+- Two-way SMS conversations (customer replies)
 
 ## Testing
 

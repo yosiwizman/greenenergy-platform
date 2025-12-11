@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
 import { AiOperationsService } from '../ai-ops/ai-operations.service';
 import { EmailNotificationService } from '../notifications/email-notification.service';
+import { SmsNotificationService } from '../notifications/sms-notification.service';
 import type {
   CustomerMessageDTO,
   CreateCustomerMessageInput,
@@ -14,7 +15,8 @@ export class CustomerExperienceService {
 
   constructor(
     private readonly aiOperationsService: AiOperationsService,
-    private readonly emailNotificationService: EmailNotificationService
+    private readonly emailNotificationService: EmailNotificationService,
+    private readonly smsNotificationService: SmsNotificationService
   ) {}
 
   /**
@@ -71,6 +73,13 @@ export class CustomerExperienceService {
 
     if (shouldSendEmail) {
       await this.sendEmailForMessage(job, message);
+    }
+
+    // Send SMS if requested and channel is SMS
+    const shouldSendSms = input.channel === 'SMS' && input.sendSms === true;
+
+    if (shouldSendSms) {
+      await this.sendSmsForMessage(job, message);
     }
 
     return this.mapToDTO(message);
@@ -200,6 +209,53 @@ export class CustomerExperienceService {
   }
 
   /**
+   * Send SMS for a message
+   */
+  private async sendSmsForMessage(job: any, message: any): Promise<void> {
+    // Try to get customer phone from contacts (primary first) or CustomerUser
+    const customerPhone = await this.getCustomerPhoneForJob(job.id);
+
+    if (!customerPhone) {
+      this.logger.warn(
+        `CustomerExperienceService.createMessageForJob: no customer phone for job ${job.id}, skipping SMS send.`
+      );
+      return;
+    }
+
+    // Build concise SMS body (SMS has character limits)
+    const smsBody = this.buildSmsBody(message.title, message.body);
+
+    await this.smsNotificationService.sendCustomerSms({
+      toPhone: customerPhone,
+      body: smsBody,
+      jobId: job.id,
+      contextLabel: message.type || 'CX_MESSAGE',
+    });
+  }
+
+  /**
+   * Build SMS body (keep it concise for SMS character limits)
+   */
+  private buildSmsBody(title: string, body: string): string {
+    // SMS best practice: keep under 160 characters when possible
+    // For longer messages, Twilio will split into segments
+    const maxLength = 300; // Allow up to ~2 SMS segments
+
+    let smsText = `${title}\n\n${body}`;
+
+    if (smsText.length > maxLength) {
+      // Truncate body if needed
+      const availableForBody = maxLength - title.length - 10; // Reserve space for title and formatting
+      const truncatedBody = body.substring(0, availableForBody) + '...';
+      smsText = `${title}\n\n${truncatedBody}`;
+    }
+
+    smsText += '\n\n- Green Energy Solar';
+
+    return smsText;
+  }
+
+  /**
    * Get customer email for a job (from primary contact or first CustomerUser)
    */
   private async getCustomerEmailForJob(jobId: string): Promise<string | null> {
@@ -230,5 +286,28 @@ export class CustomerExperienceService {
     });
 
     return customerUser?.email || null;
+  }
+
+  /**
+   * Get customer phone for a job (from primary contact first)
+   */
+  private async getCustomerPhoneForJob(jobId: string): Promise<string | null> {
+    // First try to get primary contact phone
+    const primaryContact = await prisma.contact.findFirst({
+      where: { jobId, isPrimary: true, phone: { not: null } },
+      select: { phone: true },
+    });
+
+    if (primaryContact?.phone) {
+      return primaryContact.phone;
+    }
+
+    // Fallback to any contact with phone
+    const anyContact = await prisma.contact.findFirst({
+      where: { jobId, phone: { not: null } },
+      select: { phone: true },
+    });
+
+    return anyContact?.phone || null;
   }
 }

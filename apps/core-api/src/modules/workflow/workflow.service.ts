@@ -735,6 +735,32 @@ Your Green Energy Team
       // Continue with JobNimbus task even if email fails
     }
 
+    // Optionally send SMS if enabled (Phase 7 Sprint 1)
+    const enablePaymentReminderSms = this.configService.get<string>('ENABLE_PAYMENT_REMINDER_SMS', 'false').toLowerCase() === 'true';
+
+    if (enablePaymentReminderSms) {
+      try {
+        // Build concise SMS body
+        const smsBody = `Payment reminder: You have an outstanding balance of ${outstandingFormatted} (${daysOverdue} days overdue). Please contact us to arrange payment. - Green Energy Solar`;
+
+        await this.customerExperienceService.createMessageForJob(jobId, {
+          type: 'PAYMENT_REMINDER',
+          channel: 'SMS',
+          source: 'SYSTEM',
+          title: 'Payment Reminder',
+          body: smsBody,
+          sendSms: true,
+        });
+
+        this.logger.log(`Payment reminder SMS sent for job ${jobId}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to send payment reminder SMS for job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
+        );
+        // Continue - don't fail the entire workflow if SMS fails
+      }
+    }
+
     // Also create JobNimbus internal task for follow-up
     await this.createJobNimbusTask(
       job.jobNimbusId,

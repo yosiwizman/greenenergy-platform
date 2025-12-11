@@ -646,8 +646,8 @@ Returns aging summary with buckets:
 - No reminder sent within last 7 days (cooldown)
 
 **Actions:**
-1. Create CX message with `type = 'PAYMENT_REMINDER'`
-2. Send email to customer with templated reminder
+1. Create CX message with `type = 'PAYMENT_REMINDER'` and send email
+2. Optionally send SMS reminder (if enabled)
 3. Create JobNimbus internal task for follow-up
 4. Record workflow action log
 
@@ -656,6 +656,21 @@ Returns aging summary with buckets:
 - Includes outstanding amount and due date
 - No payment links (future enhancement)
 - Encourages customer to contact office
+
+**SMS Reminders (Phase 7 Sprint 1):**
+
+Optional SMS reminders can be enabled via environment variable:
+
+```env
+ENABLE_PAYMENT_REMINDER_SMS="true"  # default: false
+```
+
+When enabled:
+- Workflow sends both EMAIL and SMS reminders for overdue invoices
+- SMS is sent via CX Engine with `channel = 'SMS'`
+- SMS body is concise (e.g., "Payment reminder: You have an outstanding balance of $5,000 (10 days overdue). Please contact us. - Green Energy Solar")
+- SMS requires Twilio configuration (see CX Engine docs)
+- If customer phone is not found, SMS is skipped gracefully
 
 **Cooldown Logic:**
 WorkflowActionLog tracks last reminder per job. Customers receive maximum one reminder every 7 days to avoid spam.
