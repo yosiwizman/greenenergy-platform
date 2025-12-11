@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { WorkflowService } from './workflow.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 /**
  * WorkflowTasks handles scheduled workflow automation operations
@@ -12,7 +13,8 @@ export class WorkflowTasks {
 
   constructor(
     private readonly workflowService: WorkflowService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService
   ) {}
 
   /**
@@ -40,6 +42,9 @@ export class WorkflowTasks {
       this.logger.log(
         `Scheduled workflow automation complete: processed=${result.processed} actions=${result.actions}`
       );
+
+      // Record successful cron run for monitoring
+      this.metricsService.setCronLastRunTimestamp('workflow_engine');
     } catch (error) {
       this.logger.error(
         'Scheduled workflow automation failed:',

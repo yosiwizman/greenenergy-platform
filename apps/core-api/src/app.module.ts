@@ -23,6 +23,8 @@ import { CustomerExperienceModule } from './modules/customer-experience/customer
 import { FinanceModule } from './modules/finance/finance.module';
 import { ForecastModule } from './modules/forecast/forecast.module';
 import { ExecutiveReportModule } from './modules/executive-report/executive-report.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+import { OpsStatusModule } from './modules/ops-status/ops-status.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -31,6 +33,8 @@ import { HealthController } from './health.controller';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    MetricsModule,
+    OpsStatusModule,
     JobModule,
     SyncModule,
     PhotoModule,
