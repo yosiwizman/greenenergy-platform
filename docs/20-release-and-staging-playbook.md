@@ -105,11 +105,15 @@ Before deploying staging, ensure you have:
 
 #### Step 2: Deploy Core API on Railway
 
+**Note**: The repository includes a **version-controlled `railway.json`** at the root that tells Railway where the Dockerfile is (`apps/core-api/Dockerfile`) and how to start the app. Railway automatically detects and uses this configuration.
+
 1. In same Railway project, click **+ New** → **GitHub Repo**
 2. Select `greenenergy-platform` repository
-3. Configure:
-   - **Root Directory**: `apps/core-api`
-   - Railway auto-detects Dockerfile
+3. Railway automatically detects `railway.json` and configures:
+   - Dockerfile path: `apps/core-api/Dockerfile`
+   - Start command: `node dist/main.js`
+   - Watch patterns for auto-rebuilds
+   - **No manual root directory configuration needed**
 4. Add environment variables (see section 3 below)
 5. Railway builds and deploys
 6. **Note the public URL** (e.g., `https://staging-api.railway.app`)
