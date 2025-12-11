@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Warranty', href: '/warranty' },
     { name: 'Materials', href: '/materials' },
     { name: 'Schedule', href: '/schedule' },
+    { name: 'Dispatch', href: '/dispatch' },
     { name: 'AI Assistant', href: '/ai-ops' },
     { name: 'Profit', href: '/profit' },
     { name: 'Workflows', href: '/workflows' },

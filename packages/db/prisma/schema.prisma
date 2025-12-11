@@ -15,9 +15,11 @@ model Job {
   jobNimbusId     String?         @unique
   customerName    String
   address         String
+  city            String?         // Phase 3 Sprint 7: For dispatch location matching
   status          String          @default("LEAD")
   assignedTo      String?
   startDate       DateTime?
+  scheduledDate   DateTime?       // Phase 3 Sprint 7: Planned crew dispatch date
   completionDate  DateTime?
   systemSize      Float?
   createdAt       DateTime        @default(now())
@@ -232,6 +234,12 @@ model Subcontractor {
   performanceScore        Int?             // 0-100
   performanceStatus       String?          // 'GREEN' | 'YELLOW' | 'RED'
   lastEvaluatedAt         DateTime?
+  
+  // Dispatch optimization fields (Phase 3 Sprint 7)
+  maxConcurrentJobs       Int?             @default(1)
+  homeBaseCity            String?
+  serviceRadiusKm         Int?             @default(50)
+  preferredJobType        String?          // e.g., 'RESIDENTIAL', 'COMMERCIAL', etc.
   
   // Legacy fields (keeping for backward compatibility)
   scoreTier               String           @default("UNRATED")

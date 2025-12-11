@@ -939,3 +939,60 @@ export interface CommandCenterOverviewDTO {
   roleViews: CommandCenterRoleViewDTO;
   jobsNeedingAttention: CommandCenterJobAttentionDTO[];
 }
+
+// AI Dispatching & Field Optimization Types (Phase 3 Sprint 7)
+export type DispatchRecommendationReason =
+  | 'HIGH_PERFORMANCE_MATCH'
+  | 'LOW_RISK_MATCH'
+  | 'SERVICE_AREA_MATCH'
+  | 'CAPACITY_AVAILABLE'
+  | 'MATERIALS_NOT_READY'
+  | 'WEATHER_RISK'
+  | 'SCHEDULE_CONFLICT'
+  | 'COMPLIANCE_ISSUE'
+  | 'OTHER';
+
+export type DispatchRecommendationConfidence = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface DispatchCrewOptionDTO {
+  subcontractorId: string;
+  subcontractorName: string;
+  performanceStatus?: 'GREEN' | 'YELLOW' | 'RED';
+  isCompliant: boolean;
+  distanceKm?: number | null;
+  openJobsToday?: number;
+  maxConcurrentJobs?: number | null;
+  reasons: DispatchRecommendationReason[];
+  confidence: DispatchRecommendationConfidence;
+}
+
+export interface DispatchJobCandidateDTO {
+  jobId: string;
+  jobNumber?: string | null;
+  customerName?: string | null;
+  city?: string | null;
+  status?: string | null;
+  riskLevel?: string | null;
+  scheduledDate?: string | null;
+  estimatedSystemSizeKw?: number | null;
+  materialsEtaStatus?: 'ON_TRACK' | 'AT_RISK' | 'LATE' | 'UNKNOWN';
+  hasSafetyIssues?: boolean;
+  hasQcIssues?: boolean;
+}
+
+export interface DispatchRecommendationDTO {
+  job: DispatchJobCandidateDTO;
+  recommendedSubcontractor?: DispatchCrewOptionDTO | null;
+  alternatives: DispatchCrewOptionDTO[];
+  scheduledDate: string;
+  canStart: boolean;
+  blockingReasons: DispatchRecommendationReason[];
+}
+
+export interface DispatchOverviewDTO {
+  date: string;
+  jobsTotal: number;
+  jobsDispatchable: number;
+  jobsBlocked: number;
+  recommendations: DispatchRecommendationDTO[];
+}
