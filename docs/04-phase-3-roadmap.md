@@ -220,7 +220,70 @@ NEXT_PUBLIC_API_BASE_URL, NEXT_PUBLIC_INTERNAL_API_KEY
 - Real-time feedback on workflow execution results
 - Foundation for future analytics dashboard
 
-## Sprint 6: Intelligent Dispatching (Future)
+## Sprint 6: Command Center & Role-Based Dashboards ✅ COMPLETE
+
+**Status**: ✅ Delivered
+
+**Deliverables**:
+- ✅ Command Center API endpoints (`/overview`, `/jobs-needing-attention`)
+- ✅ CommandCenter DTOs in shared-types
+- ✅ Internal dashboard `/command-center` page
+- ✅ Role-based metric groupings (Executive, Production, Safety, Finance)
+- ✅ Jobs needing attention table with multi-factor flagging
+- ✅ Workflow activity snapshot with link to `/workflows`
+- ✅ Unit tests for CommandCenterService (4 test scenarios)
+- ✅ Comprehensive documentation (docs/14-command-center-and-role-dashboards.md)
+
+**Features**:
+
+1. **Summary Metrics**:
+   - Jobs in progress (not CANCELLED or COMPLETE)
+   - High-risk jobs (HIGH risk level)
+   - Scheduling risk (HIGH scheduling risk)
+   - Open safety incidents
+   - Subcontractor performance distribution (GREEN/YELLOW/RED)
+   - Warranties expiring soon (within 30 days)
+   - Material orders delayed (past expected delivery)
+   - Low-margin high-risk jobs (<10% margin + HIGH risk)
+   - Workflow automation actions (last 24h)
+
+2. **Role Views**:
+   - **Executive**: Total jobs, jobs in progress, high-risk jobs, avg margin %
+   - **Production**: QC issues, delayed materials, scheduling risk
+   - **Safety**: Open incidents, high severity incidents, incidents (last 30 days)
+   - **Finance**: Low-margin jobs, low-margin + high-risk, total contract amount
+
+3. **Jobs Needing Attention**:
+   - Multi-factor flagging (QC, Safety, Materials, Warranty, Finance)
+   - Risk level badges (LOW/MEDIUM/HIGH)
+   - Deep links to `/risk/[jobId]` detail view
+   - Empty state when no jobs need attention
+   - Limited to 100 most recent jobs for performance
+
+4. **Dashboard Features**:
+   - Server-side rendered Next.js page
+   - Real-time data (no caching)
+   - Responsive grid layout (mobile-friendly)
+   - Color-coded metrics (red for high-risk, amber for warnings, green for positive)
+   - Workflow activity snapshot with link to `/workflows`
+   - Graceful error handling
+
+**Technical Details**:
+- `GET /api/v1/command-center/overview` - Complete overview
+- `GET /api/v1/command-center/jobs-needing-attention` - Jobs list only
+- Authentication: `InternalApiKeyGuard` (x-internal-api-key header)
+- Performance: <2s response time for full overview
+- Prisma aggregate queries (optimized for 500-1000 active jobs)
+- No circular dependencies (direct Prisma queries, no service injection)
+
+**Benefits**:
+- Unified operational overview for all stakeholders
+- Quick identification of jobs requiring immediate attention
+- Role-specific metric groupings for targeted insights
+- Real-time visibility into workflow automation activity
+- Foundation for future time-series and predictive analytics
+
+## Sprint 7: Intelligent Dispatching (Future)
 
 - AI-driven crew scheduling
 - Route optimization

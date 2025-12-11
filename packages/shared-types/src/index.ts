@@ -881,3 +881,61 @@ export interface RunAllWorkflowsResponse {
   processed: number;
   actions: number;
 }
+
+// Command Center Types (Phase 3 Sprint 6)
+export interface CommandCenterSummaryDTO {
+  jobsInProgress: number;
+  jobsHighRisk: number;
+  jobsAtRiskSchedule: number;
+  openSafetyIncidents: number;
+  subsGreen: number;
+  subsYellow: number;
+  subsRed: number;
+  warrantiesExpiringSoon: number;
+  materialOrdersDelayed: number;
+  lowMarginHighRiskJobs: number;
+  workflowActionsLast24h: number;
+}
+
+export interface CommandCenterJobAttentionDTO {
+  jobId: string;
+  customerName?: string | null;
+  status?: string | null;
+  riskLevel?: string | null;
+  hasQcFail?: boolean;
+  hasOpenSafetyIncident?: boolean;
+  hasDelayedMaterials?: boolean;
+  hasExpiringWarranty?: boolean;
+  isLowMarginHighRisk?: boolean;
+  lastUpdatedAt?: string | null;
+}
+
+export interface CommandCenterRoleViewDTO {
+  executive: {
+    totalJobs: number;
+    jobsInProgress: number;
+    jobsHighRisk: number;
+    avgMarginPercent?: number | null;
+  };
+  production: {
+    jobsWithQcIssues: number;
+    jobsWithDelayedMaterials: number;
+    jobsWithSchedulingRisk: number;
+  };
+  safety: {
+    openIncidents: number;
+    highSeverityIncidents: number;
+    incidentsLast30Days: number;
+  };
+  finance: {
+    lowMarginJobs: number;
+    lowMarginHighRiskJobs: number;
+    totalContractAmount?: number | null;
+  };
+}
+
+export interface CommandCenterOverviewDTO {
+  summary: CommandCenterSummaryDTO;
+  roleViews: CommandCenterRoleViewDTO;
+  jobsNeedingAttention: CommandCenterJobAttentionDTO[];
+}

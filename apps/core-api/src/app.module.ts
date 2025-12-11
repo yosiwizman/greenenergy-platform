@@ -17,6 +17,7 @@ import { AiOpsModule } from './modules/ai-ops/ai-ops.module';
 import { ProfitabilityModule } from './modules/profitability/profitability.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
+import { CommandCenterModule } from './modules/command-center/command-center.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -41,6 +42,7 @@ import { HealthController } from './health.controller';
     ProfitabilityModule,
     AccountingModule,
     WorkflowModule,
+    CommandCenterModule,
   ],
   controllers: [HealthController],
 })

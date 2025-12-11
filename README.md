@@ -772,6 +772,61 @@ Each rule has a cooldown period (1-14 days). Before firing, the engine checks `W
 
 See **[Workflow Automation](docs/13-workflow-automation.md)** for detailed documentation.
 
+## 📊 Command Center & Role-Based Dashboards
+
+**Phase 3 Sprint 6**: Unified operational overview aggregating critical metrics from across the entire platform for executives, production managers, safety officers, and finance teams.
+
+**Features**:
+
+- ✅ Real-time operational overview with role-based metric groupings
+- ✅ Summary metrics (jobs in progress, high-risk jobs, safety incidents, workflow activity)
+- ✅ Executive view (total jobs, jobs in progress, high-risk jobs, avg margin %)
+- ✅ Production view (QC issues, delayed materials, scheduling risk)
+- ✅ Safety view (open incidents, high severity incidents, incidents last 30 days)
+- ✅ Finance view (low-margin jobs, low-margin + high-risk, total contract amount)
+- ✅ Jobs needing attention table with multi-factor flagging
+- ✅ Workflow activity snapshot with link to `/workflows`
+- ✅ Subcontractor performance distribution (GREEN/YELLOW/RED)
+- ✅ Warranties expiring soon and material orders delayed tracking
+
+**API Endpoints**:
+
+```
+GET   /api/v1/command-center/overview              # Complete overview (summary, role views, attention jobs)
+GET   /api/v1/command-center/jobs-needing-attention # Jobs list only
+```
+
+**Dashboard Routes**:
+
+- `/command-center` - Unified operational overview with role-based sections
+
+**Jobs Needing Attention Criteria**:
+
+- High risk (HIGH level)
+- QC failures with missing photos
+- Open HIGH/CRITICAL safety incidents
+- Material orders past expected delivery date
+- Warranties expiring within 30 days
+- Low margin (<10%) AND HIGH risk
+
+**Performance**:
+
+- <2 seconds response time for full overview
+- Optimized Prisma aggregate queries
+- Scales to 500-1000 active jobs
+- Real-time data (no caching)
+
+**Future Enhancements (v2+)**:
+
+- Time-series charts (jobs, risk, margin trends)
+- Real-time updates via WebSockets
+- Custom dashboards with saved views
+- Advanced filtering and date range selectors
+- Per-role dedicated pages
+- AI-powered insights and anomaly detection
+
+See **[Command Center & Role-Based Dashboards](docs/14-command-center-and-role-dashboards.md)** for detailed documentation.
+
 ## 🔗 Embedded Panels for JobNimbus
 
 Phase 1 Sprint 6 introduced embedded panels that display internal data within JobNimbus iframes using secure signed tokens.
@@ -896,9 +951,9 @@ Comprehensive documentation is available in the `docs/` directory:
 - ✅ Sprint 3: Deployment & Environments (Vercel frontends, Railway backend, production-ready Dockerfile, environment docs)
 - ✅ Sprint 4: AI Workflow Automation Engine v1 (8 rules, 6 departments, deduplication, JobNimbus integration, cron scheduling)
 - ✅ Sprint 5: Workflow Automation Dashboard & Observability (internal `/workflows` page, filtering, manual execution controls)
-- Sprint 6: Intelligent Dispatching (AI-driven crew scheduling, route optimization)
-- Sprint 7: Forecasting & Analytics (job completion predictions, resource demand forecasting)
-- Sprint 8: Command Center v2 (real-time operations dashboard, performance analytics)
+- ✅ Sprint 6: Command Center & Role-Based Dashboards (unified operational overview, role views, jobs needing attention)
+- Sprint 7: Intelligent Dispatching (AI-driven crew scheduling, route optimization)
+- Sprint 8: Forecasting & Analytics (job completion predictions, resource demand forecasting)
 
 ## 🧪 Testing
 

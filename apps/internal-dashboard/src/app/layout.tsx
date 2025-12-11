@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const navigation = [
-    { name: 'Command Center', href: '/' },
+    { name: 'Command Center', href: '/command-center' },
     { name: 'Jobs', href: '/jobs' },
     { name: 'QC Panel', href: '/qc' },
     { name: 'Risk Dashboard', href: '/risk' },
@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'AI Assistant', href: '/ai-ops' },
     { name: 'Profit', href: '/profit' },
     { name: 'Workflows', href: '/workflows' },
+    { name: 'Home', href: '/' },
   ];
 
   return (
