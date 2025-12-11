@@ -176,7 +176,7 @@ describe('FinanceService', () => {
       expect(prisma.jobFinancialSnapshot.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { arStatus: 'OVERDUE' },
-        }),
+        })
       );
     });
 
@@ -243,11 +243,9 @@ describe('FinanceService', () => {
     it('should throw NotFoundException if snapshot not found', async () => {
       (prisma.jobFinancialSnapshot.findUnique as jest.Mock).mockResolvedValue(null);
 
+      await expect(service.getJobArDetails('non-existent-job')).rejects.toThrow(NotFoundException);
       await expect(service.getJobArDetails('non-existent-job')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.getJobArDetails('non-existent-job')).rejects.toThrow(
-        'Financial snapshot for job non-existent-job not found',
+        'Financial snapshot for job non-existent-job not found'
       );
     });
 
@@ -380,24 +378,24 @@ describe('FinanceService', () => {
       const result = await service.getArAgingSummary();
 
       expect(result.totalOutstanding).toBe(150000);
-      
-      const currentBucket = result.buckets.find(b => b.bucket === 'CURRENT')!;
+
+      const currentBucket = result.buckets.find((b) => b.bucket === 'CURRENT')!;
       expect(currentBucket.outstanding).toBe(10000);
       expect(currentBucket.jobsCount).toBe(1);
 
-      const days1to30Bucket = result.buckets.find(b => b.bucket === 'DAYS_1_30')!;
+      const days1to30Bucket = result.buckets.find((b) => b.bucket === 'DAYS_1_30')!;
       expect(days1to30Bucket.outstanding).toBe(20000);
       expect(days1to30Bucket.jobsCount).toBe(1);
 
-      const days31to60Bucket = result.buckets.find(b => b.bucket === 'DAYS_31_60')!;
+      const days31to60Bucket = result.buckets.find((b) => b.bucket === 'DAYS_31_60')!;
       expect(days31to60Bucket.outstanding).toBe(30000);
       expect(days31to60Bucket.jobsCount).toBe(1);
 
-      const days61to90Bucket = result.buckets.find(b => b.bucket === 'DAYS_61_90')!;
+      const days61to90Bucket = result.buckets.find((b) => b.bucket === 'DAYS_61_90')!;
       expect(days61to90Bucket.outstanding).toBe(40000);
       expect(days61to90Bucket.jobsCount).toBe(1);
 
-      const days91PlusBucket = result.buckets.find(b => b.bucket === 'DAYS_91_PLUS')!;
+      const days91PlusBucket = result.buckets.find((b) => b.bucket === 'DAYS_91_PLUS')!;
       expect(days91PlusBucket.outstanding).toBe(50000);
       expect(days91PlusBucket.jobsCount).toBe(1);
 
@@ -417,7 +415,7 @@ describe('FinanceService', () => {
 
       const result = await service.getArAgingSummary();
 
-      const currentBucket = result.buckets.find(b => b.bucket === 'CURRENT')!;
+      const currentBucket = result.buckets.find((b) => b.bucket === 'CURRENT')!;
       expect(currentBucket.outstanding).toBe(10000);
       expect(currentBucket.jobsCount).toBe(1);
     });
@@ -512,7 +510,7 @@ describe('FinanceService', () => {
       (prisma.job.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.listInvoicesForJob('non-existent-id')).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
 

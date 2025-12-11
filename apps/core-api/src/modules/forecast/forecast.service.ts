@@ -1,6 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { prisma } from '@greenenergy/db';
-import { startOfDay, addWeeks, startOfWeek, isBefore, isAfter, isWithinInterval, format } from 'date-fns';
+import {
+  startOfDay,
+  addWeeks,
+  startOfWeek,
+  isBefore,
+  isAfter,
+  isWithinInterval,
+  format,
+} from 'date-fns';
 import type {
   CashflowForecastDTO,
   CashflowPointDTO,
@@ -57,10 +65,7 @@ export class ForecastService {
     // Fetch all open invoices with outstanding balance
     const invoices = await prisma.invoice.findMany({
       where: {
-        OR: [
-          { status: 'OPEN' },
-          { balance: { gt: 0 } },
-        ],
+        OR: [{ status: 'OPEN' }, { balance: { gt: 0 } }],
       },
       select: {
         id: true,
@@ -153,9 +158,7 @@ export class ForecastService {
     });
 
     // Filter out fully paid jobs
-    const pipelineJobs = jobs.filter(
-      (job) => job.financialSnapshot?.arStatus !== 'PAID',
-    );
+    const pipelineJobs = jobs.filter((job) => job.financialSnapshot?.arStatus !== 'PAID');
 
     this.logger.log(`Found ${pipelineJobs.length} pipeline jobs`);
 

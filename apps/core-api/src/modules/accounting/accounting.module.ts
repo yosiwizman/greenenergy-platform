@@ -10,12 +10,7 @@ import { CustomerExperienceModule } from '../customer-experience/customer-experi
 @Module({
   imports: [ConfigModule, CustomerExperienceModule],
   controllers: [AccountingController],
-  providers: [
-    QuickbooksAuthService,
-    QuickbooksClient,
-    AccountingService,
-    AccountingTasks,
-  ],
+  providers: [QuickbooksAuthService, QuickbooksClient, AccountingService, AccountingTasks],
   exports: [AccountingService],
 })
 export class AccountingModule {}

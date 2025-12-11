@@ -12,12 +12,12 @@ export class AccountingTasks {
 
   constructor(
     private readonly accountingService: AccountingService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {}
 
   /**
    * Sync all active jobs from QuickBooks daily at 2 AM
-   * 
+   *
    * Controlled by QB_SYNC_ENABLED environment variable (default: false)
    */
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
@@ -37,7 +37,7 @@ export class AccountingTasks {
     } catch (error) {
       this.logger.error(
         'Failed during scheduled QuickBooks sync:',
-        error instanceof Error ? error.stack : String(error),
+        error instanceof Error ? error.stack : String(error)
       );
       // Don't rethrow - we don't want to crash the app on sync failures
     }

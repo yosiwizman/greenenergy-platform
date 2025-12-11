@@ -38,7 +38,7 @@ export class CustomerExperienceController {
   @HttpCode(HttpStatus.CREATED)
   async createMessage(
     @Param('jobId') jobId: string,
-    @Body() body: CreateCustomerMessageInput,
+    @Body() body: CreateCustomerMessageInput
   ): Promise<CustomerMessageDTO> {
     return this.cxService.createMessageForJob(jobId, body);
   }
@@ -56,7 +56,7 @@ export class CustomerExperienceController {
       messageType: CustomerMessageType;
       tone?: 'FRIENDLY' | 'FORMAL';
       customPrompt?: string;
-    },
+    }
   ): Promise<CustomerMessageDTO> {
     return this.cxService.createAutoMessageFromAi(jobId, body);
   }

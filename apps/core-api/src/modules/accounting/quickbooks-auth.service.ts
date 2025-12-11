@@ -4,7 +4,7 @@ import axios from 'axios';
 
 /**
  * QuickbooksAuthService manages OAuth2 token lifecycle for QuickBooks API
- * 
+ *
  * Responsibilities:
  * - Maintain current access token and expiry in memory
  * - Automatically refresh tokens when expired
@@ -13,7 +13,7 @@ import axios from 'axios';
 @Injectable()
 export class QuickbooksAuthService {
   private readonly logger = new Logger(QuickbooksAuthService.name);
-  
+
   private readonly enabled: boolean;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -32,7 +32,7 @@ export class QuickbooksAuthService {
     this.refreshToken = this.configService.get<string>('QB_REFRESH_TOKEN', '');
     this.tokenUrl = this.configService.get<string>(
       'QB_TOKEN_URL',
-      'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
+      'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer'
     );
     this.fallbackAccessToken = this.configService.get<string>('QB_ACCESS_TOKEN', '');
 
@@ -40,7 +40,7 @@ export class QuickbooksAuthService {
       this.logger.warn('QuickBooks integration is DISABLED (QB_ENABLED=false)');
     } else if (!this.clientId || !this.clientSecret || !this.refreshToken) {
       this.logger.warn(
-        'QuickBooks OAuth2 credentials incomplete. Will fallback to QB_ACCESS_TOKEN if available.',
+        'QuickBooks OAuth2 credentials incomplete. Will fallback to QB_ACCESS_TOKEN if available.'
       );
     } else {
       this.logger.log('QuickBooks OAuth2 auth service initialized');
@@ -70,7 +70,7 @@ export class QuickbooksAuthService {
     if (!hasOAuthCredentials) {
       if (this.fallbackAccessToken) {
         this.logger.warn(
-          'Using fallback QB_ACCESS_TOKEN from env (OAuth2 credentials not configured)',
+          'Using fallback QB_ACCESS_TOKEN from env (OAuth2 credentials not configured)'
         );
         return this.fallbackAccessToken;
       }
@@ -80,7 +80,7 @@ export class QuickbooksAuthService {
     // Refresh the token
     try {
       this.logger.log('Refreshing QuickBooks access token via OAuth2');
-      
+
       const response = await axios.post(
         this.tokenUrl,
         new URLSearchParams({
@@ -90,10 +90,10 @@ export class QuickbooksAuthService {
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
+            Authorization: `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
           },
           timeout: 10000,
-        },
+        }
       );
 
       const { access_token, expires_in } = response.data;
@@ -108,7 +108,7 @@ export class QuickbooksAuthService {
       this.tokenExpiresAt = Date.now() + expiresInMs;
 
       this.logger.log(
-        `QuickBooks token refreshed successfully, expires in ${Math.floor(expiresInMs / 1000 / 60)} minutes`,
+        `QuickBooks token refreshed successfully, expires in ${Math.floor(expiresInMs / 1000 / 60)} minutes`
       );
 
       return access_token;
@@ -117,7 +117,7 @@ export class QuickbooksAuthService {
 
       if (error.response) {
         this.logger.error(
-          `QuickBooks OAuth2 error: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
+          `QuickBooks OAuth2 error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
         );
       }
 

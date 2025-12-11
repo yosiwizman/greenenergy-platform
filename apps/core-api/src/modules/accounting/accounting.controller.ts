@@ -5,7 +5,7 @@ import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
 /**
  * AccountingController exposes internal APIs for syncing financial data
  * from QuickBooks to JobFinancialSnapshot records.
- * 
+ *
  * All endpoints are protected by InternalApiKeyGuard.
  */
 @Controller('api/v1/accounting')

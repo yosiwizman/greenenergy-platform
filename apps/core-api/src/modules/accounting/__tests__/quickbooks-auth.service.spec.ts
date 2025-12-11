@@ -85,9 +85,9 @@ describe('QuickbooksAuthService', () => {
       }).compile();
 
       const disabledService = module.get<QuickbooksAuthService>(QuickbooksAuthService);
-      
+
       await expect(disabledService.getAccessToken()).rejects.toThrow(
-        'QuickBooks integration is disabled',
+        'QuickBooks integration is disabled'
       );
     });
 
@@ -111,7 +111,7 @@ describe('QuickbooksAuthService', () => {
       }).compile();
 
       const fallbackService = module.get<QuickbooksAuthService>(QuickbooksAuthService);
-      
+
       const token = await fallbackService.getAccessToken();
       expect(token).toBe('fallback_token');
     });
@@ -133,9 +133,9 @@ describe('QuickbooksAuthService', () => {
       }).compile();
 
       const noCredsService = module.get<QuickbooksAuthService>(QuickbooksAuthService);
-      
+
       await expect(noCredsService.getAccessToken()).rejects.toThrow(
-        'QuickBooks credentials missing',
+        'QuickBooks credentials missing'
       );
     });
 
@@ -158,9 +158,9 @@ describe('QuickbooksAuthService', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': expect.stringContaining('Basic '),
+            Authorization: expect.stringContaining('Basic '),
           }),
-        }),
+        })
       );
     });
 
@@ -199,9 +199,7 @@ describe('QuickbooksAuthService', () => {
         },
       };
 
-      mockedAxios.post
-        .mockResolvedValueOnce(mockResponse1)
-        .mockResolvedValueOnce(mockResponse2);
+      mockedAxios.post.mockResolvedValueOnce(mockResponse1).mockResolvedValueOnce(mockResponse2);
 
       // First call
       const token1 = await service.getAccessToken();
@@ -219,9 +217,7 @@ describe('QuickbooksAuthService', () => {
     it('should handle token refresh errors gracefully', async () => {
       mockedAxios.post.mockRejectedValue(new Error('OAuth2 server error'));
 
-      await expect(service.getAccessToken()).rejects.toThrow(
-        'QuickBooks token refresh failed',
-      );
+      await expect(service.getAccessToken()).rejects.toThrow('QuickBooks token refresh failed');
     });
 
     it('should clear cache on token refresh error', async () => {

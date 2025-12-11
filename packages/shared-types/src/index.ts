@@ -1135,3 +1135,23 @@ export interface ForecastOverviewDTO {
   cashflow: CashflowForecastDTO;
   pipeline: PipelineForecastDTO;
 }
+
+// Executive Weekly Digest Types (Phase 6 Sprint 2)
+export interface ExecutiveDigestKeyCountsDTO {
+  highRiskJobs: number;
+  safetyIncidentsOpen: number;
+  overdueArJobs: number;
+  workflowsTriggeredLastPeriod: number;
+}
+
+export interface ExecutiveDigestDTO {
+  generatedAt: string;   // ISO timestamp
+  periodStart: string;   // ISO date (start of digest period, e.g., previous Monday)
+  periodEnd: string;     // ISO date (end of digest period, e.g., Sunday)
+
+  financeArSummary: ArSummaryDTO;
+  financeAgingSummary: ArAgingSummaryDTO;
+  forecastOverview: ForecastOverviewDTO;
+
+  keyCounts: ExecutiveDigestKeyCountsDTO;
+}

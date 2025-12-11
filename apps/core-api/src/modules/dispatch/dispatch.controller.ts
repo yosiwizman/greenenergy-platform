@@ -1,10 +1,7 @@
 import { Controller, Get, Post, Param, Query, Body, UseGuards, Logger } from '@nestjs/common';
 import { DispatchService } from './dispatch.service';
 import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
-import type {
-  DispatchOverviewDTO,
-  DispatchRecommendationDTO,
-} from '@greenenergy/shared-types';
+import type { DispatchOverviewDTO, DispatchRecommendationDTO } from '@greenenergy/shared-types';
 
 /**
  * DispatchController exposes AI dispatch endpoints for the internal dashboard
@@ -35,10 +32,12 @@ export class DispatchController {
   @Get('jobs/:jobId')
   async getJobRecommendations(
     @Param('jobId') jobId: string,
-    @Query('date') dateStr?: string,
+    @Query('date') dateStr?: string
   ): Promise<DispatchRecommendationDTO | null> {
     const date = dateStr ? new Date(dateStr) : new Date();
-    this.logger.log(`Dispatch recommendation requested for job ${jobId}, date: ${date.toISOString()}`);
+    this.logger.log(
+      `Dispatch recommendation requested for job ${jobId}, date: ${date.toISOString()}`
+    );
     return this.dispatchService.getRecommendationsForJob(jobId, date);
   }
 
@@ -49,7 +48,7 @@ export class DispatchController {
   @Post('jobs/:jobId/assign')
   async assignSub(
     @Param('jobId') jobId: string,
-    @Body() body: { subcontractorId: string; scheduledDate: string },
+    @Body() body: { subcontractorId: string; scheduledDate: string }
   ): Promise<{ success: boolean }> {
     this.logger.log(`Assignment requested for job ${jobId}, subcontractor ${body.subcontractorId}`);
     const scheduledDate = new Date(body.scheduledDate);

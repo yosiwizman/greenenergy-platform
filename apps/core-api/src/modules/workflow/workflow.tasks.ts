@@ -17,12 +17,13 @@ export class WorkflowTasks {
 
   /**
    * Run workflow automation daily at 4 AM
-   * 
+   *
    * Controlled by WORKFLOW_AUTOMATION_ENABLED environment variable (default: false)
    */
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async handleDailyWorkflows(): Promise<void> {
-    const enabled = this.configService.get<string>('WORKFLOW_AUTOMATION_ENABLED', 'false') === 'true';
+    const enabled =
+      this.configService.get<string>('WORKFLOW_AUTOMATION_ENABLED', 'false') === 'true';
 
     if (!enabled) {
       this.logger.debug('Workflow automation is DISABLED (WORKFLOW_AUTOMATION_ENABLED=false)');
