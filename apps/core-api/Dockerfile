@@ -60,6 +60,9 @@ RUN pnpm build --filter @greenenergy/core-api...
 # ========================================
 FROM node:20-alpine AS runner
 
+# Install OpenSSL for Prisma engine compatibility on Alpine
+RUN apk add --no-cache openssl
+
 # Install pnpm
 RUN npm install -g pnpm@9.0.0
 
@@ -68,10 +71,14 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
 WORKDIR /app
+ENV NODE_ENV=production
 
 # Copy necessary files from builder
-COPY --from=builder --chown=nestjs:nodejs /app/apps/core-api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/core-api/package.json ./package.json
+# NOTE: pnpm workspace dependencies are linked under each package's node_modules,
+# so the runtime image must include apps/core-api/node_modules.
+COPY --from=builder --chown=nestjs:nodejs /app/apps/core-api/dist ./apps/core-api/dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/core-api/package.json ./apps/core-api/package.json
+COPY --from=builder --chown=nestjs:nodejs /app/apps/core-api/node_modules ./apps/core-api/node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
 
@@ -86,4 +93,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
 
 # Start the app
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/core-api/dist/main.js"]

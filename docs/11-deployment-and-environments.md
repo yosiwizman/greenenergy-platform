@@ -234,7 +234,7 @@ Same steps as Customer Portal, but:
 
 The repository includes a **version-controlled `railway.json`** at the repo root that configures Railway deployment:
 - Points to `apps/core-api/Dockerfile` (no need to configure root directory manually)
-- Defines `startCommand` as `node dist/main.js`
+- Defines `startCommand` as `node apps/core-api/dist/main.js`
 - Specifies watch patterns for automatic rebuilds when core-api or shared packages change
 
 Railway automatically detects and uses `railway.json` as the canonical configuration source.
