@@ -75,6 +75,28 @@ ENABLE_LLM_FOR_CX_MESSAGES="false"     # Set "true" to enable LLM for CX message
 
 ## Usage
 
+### Using AiOps LLM Features in Internal Dashboard
+
+Internal operators can trigger LLM-backed AiOps features directly from the **internal dashboard**:
+
+1. Navigate to `/ai-ops` in the internal dashboard.
+2. Enter a Job ID and click **Load Insights** (loads the rule-based summary + recommendations).
+3. Use **AI Summary** → **Generate AI Summary** to call:
+   - `POST /api/v1/ai-ops/jobs/:jobId/summary/llm`
+4. Use **AI Customer Message Draft** to generate a draft message for the selected job:
+   - Select Channel (EMAIL/SMS), Tone, and Context
+   - Optionally add extra context
+   - Click **Generate AI Message Draft** to call:
+     - `POST /api/v1/ai-ops/jobs/:jobId/customer-message/llm`
+5. The UI always shows:
+   - `model` returned from the backend
+   - Whether the result is fallback (`isFallback: true`) vs LLM
+   - A local “generated at” timestamp (client-side)
+
+Notes:
+- No message is auto-sent. The dashboard only generates a draft and provides copy-to-clipboard actions.
+- If `ENABLE_LLM_FOR_AI_OPS` or `ENABLE_LLM_FOR_CX_MESSAGES` is `false` (or the provider/API key is not configured), the backend returns deterministic fallbacks with `isFallback: true`.
+
 ### AI Operations: Job Summary
 
 **Internal UI Flow**:

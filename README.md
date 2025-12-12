@@ -500,23 +500,26 @@ Phase 2 Sprint 5 introduced an AI-powered operations assistant that generates jo
 
 - ✅ Comprehensive job summaries aggregating data from QC, Risk, Safety, Materials, and Warranty
 - ✅ Prioritized recommendations (QC, RISK, SAFETY, MATERIALS, SCHEDULING, WARRANTY, GENERAL)
-- ✅ Customer message generator with tone control (FRIENDLY/FORMAL) and message types
+- ✅ Customer message draft generator (LLM-backed with deterministic fallback)
 - ✅ Job lookup dashboard with collapsible sections and recommendations table
-- ✅ Designed for future LLM integration (OpenAI, Anthropic, local models)
-- ✅ 22 comprehensive test cases covering all scenarios
+- ✅ Operators can generate **AI job summaries** and **AI customer message drafts** from the internal dashboard at `/ai-ops`
+- ✅ LLM is optional and guarded by env flags; UI shows `isFallback` when LLM is disabled or unavailable
+- ✅ 22 comprehensive test cases covering core scenarios
 
 **API Endpoints**:
 
 ```
-GET   /api/v1/ai-ops/jobs/:jobId/summary            # Get AI-generated job summary
-GET   /api/v1/ai-ops/jobs/:jobId/recommendations    # Get actionable recommendations
-GET   /api/v1/ai-ops/jobs/:jobId/insights           # Get summary + recommendations
-POST  /api/v1/ai-ops/jobs/:jobId/customer-message   # Generate customer message
+GET   /api/v1/ai-ops/jobs/:jobId/summary              # Get AI-generated job summary (rule-based)
+GET   /api/v1/ai-ops/jobs/:jobId/recommendations      # Get actionable recommendations
+GET   /api/v1/ai-ops/jobs/:jobId/insights             # Get summary + recommendations
+POST  /api/v1/ai-ops/jobs/:jobId/customer-message     # Generate customer message (legacy rule-based)
+POST  /api/v1/ai-ops/jobs/:jobId/summary/llm          # Generate LLM-powered job summary (fallback-safe)
+POST  /api/v1/ai-ops/jobs/:jobId/customer-message/llm # Generate LLM-powered customer message draft (fallback-safe)
 ```
 
 **Dashboard Routes**:
 
-- `/ai-ops` - AI Assistant with job lookup, summary display, recommendations table, and message generator
+- `/ai-ops` - AI Assistant with job lookup, summary display, recommendations table, and LLM-backed AI summary + customer draft panels
 
 **Message Types**: STATUS_UPDATE | ETA_UPDATE | GENERIC
 
