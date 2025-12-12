@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { prisma } from '@greenenergy/db';
 import type {
   AiJobSummaryDTO,
@@ -7,11 +8,20 @@ import type {
   AiCustomerMessageRequestDTO,
   AiJobSummarySection,
   MaterialEtaStatus,
+  AiOpsLlmJobSummaryDTO,
+  AiOpsLlmCustomerMessageInputDTO,
+  AiOpsLlmCustomerMessageDTO,
 } from '@greenenergy/shared-types';
+import { LlmService } from '../llm/llm.service';
 
 @Injectable()
 export class AiOperationsService {
   private readonly logger = new Logger(AiOperationsService.name);
+
+  constructor(
+    private readonly llmService: LlmService,
+    private readonly configService: ConfigService
+  ) {}
 
   /**
    * Get comprehensive job summary with AI-generated insights
@@ -566,5 +576,271 @@ export class AiOperationsService {
     if (statuses.includes('LATE')) return 'LATE';
     if (statuses.includes('AT_RISK')) return 'AT_RISK';
     return 'ON_TRACK';
+  }
+
+  /**
+   * Generate job summary using LLM with fallback to rule-based summary
+   * Phase 10 Sprint 1 - LLM Integration
+   */
+  async generateJobSummaryWithLlm(jobId: string): Promise<AiOpsLlmJobSummaryDTO> {
+    const enableAiOps = this.configService.get<string>('ENABLE_LLM_FOR_AI_OPS') === 'true';
+    
+    if (!enableAiOps || !this.llmService.isEnabled()) {
+      this.logger.log(`LLM disabled for AI Ops, using fallback for job: ${jobId}`);
+      const fallback = await this.getJobSummary(jobId);
+      return {
+        jobId,
+        summary: this.formatFallbackSummary(fallback),
+        recommendations: this.formatFallbackRecommendations(
+          await this.getJobRecommendations(jobId)
+        ),
+        model: 'deterministic-fallback',
+        isFallback: true,
+      };
+    }
+
+    try {
+      const context = await this.buildJobContextForLlm(jobId);
+      const systemPrompt = `You are an expert operations assistant for a roofing and solar installation company.
+Given job data, you must:
+- Summarize current status in 4–7 bullet points
+- Highlight risks (QC, safety, AR, schedule, subcontractor performance)
+- Suggest the 3 most important next actions for the internal team
+Use clear, professional language. Do not include internal IDs or raw database values.`;
+
+      const userPrompt = `Here is the job context:
+
+${context}
+
+Return:
+1) "Summary" – 4–7 bullet points
+2) "Risks" – 2–4 bullet points
+3) "Next actions" – 3 bullet points
+
+Keep under 500 words.`;
+
+      const result = await this.llmService.generateText({
+        systemPrompt,
+        userPrompt,
+        input: { purpose: 'AI_OPS_SUMMARY' },
+      });
+
+      return {
+        jobId,
+        summary: result.text,
+        model: result.model,
+        isFallback: false,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`LLM generation failed for job ${jobId}: ${errorMessage}`);
+      const fallback = await this.getJobSummary(jobId);
+      return {
+        jobId,
+        summary: this.formatFallbackSummary(fallback),
+        recommendations: this.formatFallbackRecommendations(
+          await this.getJobRecommendations(jobId)
+        ),
+        model: 'deterministic-fallback',
+        isFallback: true,
+      };
+    }
+  }
+
+  /**
+   * Generate customer message using LLM with fallback to template-based message
+   * Phase 10 Sprint 1 - LLM Integration
+   */
+  async generateCustomerMessageWithLlm(
+    input: AiOpsLlmCustomerMessageInputDTO
+  ): Promise<AiOpsLlmCustomerMessageDTO> {
+    const enableCxMessages = this.configService.get<string>('ENABLE_LLM_FOR_CX_MESSAGES') === 'true';
+    const tone = input.tone ?? 'friendly';
+
+    if (!enableCxMessages || !this.llmService.isEnabled()) {
+      this.logger.log(`LLM disabled for CX messages, using fallback for job: ${input.jobId}`);
+      const fallback = await this.buildTemplateCustomerMessage(input);
+      return {
+        jobId: input.jobId,
+        tone,
+        message: fallback,
+        model: 'deterministic-fallback',
+        isFallback: true,
+      };
+    }
+
+    try {
+      const context = await this.buildJobContextForLlm(input.jobId);
+      const toneInstruction =
+        tone === 'formal'
+          ? 'Use formal, respectful language.'
+          : tone === 'direct'
+          ? 'Use direct, clear language.'
+          : 'Use friendly, reassuring language.';
+
+      const systemPrompt = `You are writing messages to homeowners for a roofing and solar installation company.
+${toneInstruction}
+Do not mention internal systems or technical details. Be clear and concise.
+Never make legal promises or guarantees.`;
+
+      const contextType = input.context ?? 'general_update';
+      const userPrompt = `Job context:
+${context}
+
+Write a message to the customer with context "${contextType}".
+Keep it under 180 words. Avoid legal promises or guarantees.`;
+
+      const result = await this.llmService.generateText({
+        systemPrompt,
+        userPrompt,
+        input: { purpose: 'CX_MESSAGE' },
+      });
+
+      return {
+        jobId: input.jobId,
+        tone,
+        message: result.text,
+        model: result.model,
+        isFallback: false,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `LLM generation failed for customer message job ${input.jobId}: ${errorMessage}`
+      );
+      const fallback = await this.buildTemplateCustomerMessage(input);
+      return {
+        jobId: input.jobId,
+        tone,
+        message: fallback,
+        model: 'deterministic-fallback',
+        isFallback: true,
+      };
+    }
+  }
+
+  /**
+   * Build formatted job context string for LLM prompts
+   */
+  private async buildJobContextForLlm(jobId: string): Promise<string> {
+    const jobData = await this.fetchJobData(jobId);
+    if (!jobData) {
+      throw new NotFoundException(`Job with ID ${jobId} not found`);
+    }
+
+    const sections: string[] = [];
+
+    sections.push(`Job: ${jobData.customerName || 'Unknown'}`);
+    sections.push(`Status: ${jobData.status}`);
+    sections.push(
+      `Last Updated: ${Math.floor((Date.now() - new Date(jobData.updatedAt).getTime()) / (1000 * 60 * 60 * 24))} days ago`
+    );
+
+    // QC
+    const latestQC = jobData.qcPhotoChecks?.[0];
+    if (latestQC) {
+      sections.push(`QC Status: ${latestQC.status}`);
+      if (latestQC.status === 'FAIL') {
+        const missing = JSON.parse(latestQC.missingCategoriesJson);
+        sections.push(
+          `Missing Photos: ${missing.map((m: any) => `${m.category} (${m.actualCount}/${m.requiredCount})`).join(', ')}`
+        );
+      }
+    }
+
+    // Risk
+    if (jobData.riskSnapshot) {
+      sections.push(`Risk Level: ${jobData.riskSnapshot.riskLevel}`);
+      const reasons = JSON.parse(jobData.riskSnapshot.reasonsJson);
+      if (reasons.length > 0) {
+        sections.push(`Risk Reasons: ${reasons.map((r: any) => r.label).join(', ')}`);
+      }
+    }
+
+    // Safety
+    const openIncidents = jobData.safetyIncidents?.length || 0;
+    if (openIncidents > 0) {
+      sections.push(`Open Safety Incidents: ${openIncidents}`);
+    }
+
+    // Materials
+    const materialOrders = jobData.materialOrders || [];
+    if (materialOrders.length > 0) {
+      const etaStatus = this.computeWorstMaterialEta(materialOrders);
+      sections.push(`Materials Status: ${etaStatus}`);
+    }
+
+    // Subcontractor
+    const subcontractor = jobData.subcontractorAssignments?.[0]?.subcontractor;
+    if (subcontractor) {
+      sections.push(
+        `Subcontractor: ${subcontractor.name} (${subcontractor.performanceStatus})`
+      );
+    }
+
+    // Warranties
+    const warranty = jobData.warranties?.[0];
+    if (warranty) {
+      const openClaims = warranty.claims?.length || 0;
+      sections.push(
+        `Warranty: ${warranty.status}${openClaims > 0 ? ` (${openClaims} open claims)` : ''}`
+      );
+    }
+
+    return sections.join('\n');
+  }
+
+  /**
+   * Format rule-based summary for fallback response
+   */
+  private formatFallbackSummary(summary: AiJobSummaryDTO): string {
+    const sections = [
+      `Overall: ${summary.overallSummary}`,
+      '',
+      ...summary.sections.map((s) => `${s.title}:\n${s.body}`),
+    ];
+    return sections.join('\n\n');
+  }
+
+  /**
+   * Format rule-based recommendations for fallback response
+   */
+  private formatFallbackRecommendations(recommendations: AiJobRecommendationDTO[]): string {
+    if (recommendations.length === 0) return '';
+    return (
+      'Recommendations:\n' +
+      recommendations
+        .slice(0, 3)
+        .map((r) => `- ${r.label}: ${r.description}`)
+        .join('\n')
+    );
+  }
+
+  /**
+   * Build template-based customer message for fallback
+   */
+  private async buildTemplateCustomerMessage(
+    input: AiOpsLlmCustomerMessageInputDTO
+  ): Promise<string> {
+    const jobData = await this.fetchJobData(input.jobId);
+    if (!jobData) {
+      throw new NotFoundException(`Job with ID ${input.jobId} not found`);
+    }
+
+    const tone = input.tone ?? 'friendly';
+    const context = input.context ?? 'general_update';
+    const isFriendly = tone === 'friendly';
+    const greeting = isFriendly ? 'Hi' : 'Hello';
+    const customerName = jobData.customerName || 'valued customer';
+    const status = jobData.status.toLowerCase().replace('_', ' ');
+
+    const messages: Record<string, string> = {
+      general_update: `${greeting} ${customerName},\\n\\nYour project is currently in ${status} status. Our team is working diligently to ensure everything proceeds smoothly. We'll keep you updated on progress.\\n\\nThank you for choosing us!`,
+      payment_reminder: `${greeting} ${customerName},\\n\\nThis is a friendly reminder regarding payment for your project. Your project is in ${status} status. Please contact our office if you have any questions about your invoice.\\n\\nThank you for your prompt attention.`,
+      scheduling: `${greeting} ${customerName},\\n\\nWe're working on scheduling the next phase of your project (currently in ${status}). We'll reach out shortly to confirm a date that works for you.\\n\\nThank you for your flexibility!`,
+      post_install: `${greeting} ${customerName},\\n\\nThank you for choosing us for your solar installation! Your system is now complete. Please let us know if you have any questions or concerns.\\n\\nWelcome to solar power!`,
+    };
+
+    return (messages[context] || messages.general_update) as string;
   }
 }

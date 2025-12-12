@@ -1179,3 +1179,53 @@ export interface OpsStatusDTO {
   externalServices: ExternalServiceHealthDTO[];
   latestCronRuns: CronJobStatusDTO[];
 }
+
+// LLM Integration Types (Phase 10 Sprint 1)
+export type LlmGenerationPurpose = 'AI_OPS_SUMMARY' | 'AI_OPS_RECOMMENDATIONS' | 'CX_MESSAGE';
+
+export interface LlmGenerationInput {
+  purpose: LlmGenerationPurpose;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+}
+
+export interface LlmGenerationResultDTO {
+  text: string;
+  model: string;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+}
+
+export interface AiOpsLlmJobSummaryDTO {
+  jobId: string;
+  summary: string;
+  recommendations?: string;
+  model: string;
+  isFallback: boolean; // true if deterministic fallback used
+}
+
+export type AiOpsLlmMessageTone = 'friendly' | 'formal' | 'direct';
+
+export type AiOpsLlmMessageContext =
+  | 'general_update'
+  | 'payment_reminder'
+  | 'scheduling'
+  | 'post_install';
+
+export interface AiOpsLlmCustomerMessageInputDTO {
+  jobId: string;
+  tone?: AiOpsLlmMessageTone;
+  context?: AiOpsLlmMessageContext;
+}
+
+export interface AiOpsLlmCustomerMessageDTO {
+  jobId: string;
+  tone: AiOpsLlmMessageTone;
+  message: string;
+  model: string;
+  isFallback: boolean;
+}
