@@ -111,7 +111,7 @@ Before deploying staging, ensure you have:
 2. Select `greenenergy-platform` repository
 3. Railway automatically detects `railway.json` and configures:
    - Dockerfile path: `apps/core-api/Dockerfile`
-   - Start command: `node dist/main.js`
+   - Start command: `node apps/core-api/dist/main.js`
    - Watch patterns for auto-rebuilds
    - **No manual root directory configuration needed**
 4. The Dockerfile uses the monorepo root build pipeline:

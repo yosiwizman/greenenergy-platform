@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.dist
+**/dist
+build
+**/build
+.next
+**/.next
+.turbo
+coverage
+**/coverage
+
+# VCS
+.git
+**/.git
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode
+.idea
