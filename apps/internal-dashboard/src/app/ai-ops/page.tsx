@@ -1,16 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card } from '@greenenergy/ui';
 import type {
   AiJobSummaryDTO,
   AiJobRecommendationDTO,
-  AiCustomerMessageDTO,
-  AiCustomerMessageRequestDTO,
+  AiOpsLlmCustomerMessageDTO,
+  AiOpsLlmJobSummaryDTO,
+  AiOpsLlmMessageContext,
+  AiOpsLlmMessageTone,
   AiRecommendationCategory,
   AiRecommendationPriority,
-  AiCustomerMessageType,
 } from '@greenenergy/shared-types';
+import {
+  fetchLlmJobSummary,
+  generateLlmCustomerMessage,
+  type GenerateLlmCustomerMessageInput,
+} from '../../lib/api/aiOpsLlmClient';
 
 export default function AiOpsPage() {
   const [jobId, setJobId] = useState('');
@@ -19,13 +25,41 @@ export default function AiOpsPage() {
 
   const [summary, setSummary] = useState<AiJobSummaryDTO | null>(null);
   const [recommendations, setRecommendations] = useState<AiJobRecommendationDTO[]>([]);
-  const [customerMessage, setCustomerMessage] = useState<AiCustomerMessageDTO | null>(null);
 
-  // Customer message form state
-  const [messageType, setMessageType] = useState<AiCustomerMessageType>('STATUS_UPDATE');
-  const [tone, setTone] = useState<'FRIENDLY' | 'FORMAL'>('FRIENDLY');
-  const [customQuestion, setCustomQuestion] = useState('');
-  const [generatingMessage, setGeneratingMessage] = useState(false);
+  // AI Summary (LLM) state
+  const [aiSummary, setAiSummary] = useState<AiOpsLlmJobSummaryDTO | null>(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+  const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
+  const [aiSummaryGeneratedAt, setAiSummaryGeneratedAt] = useState<Date | null>(null);
+
+  // AI Customer message draft (LLM) state
+  const [aiMessageChannel, setAiMessageChannel] = useState<'EMAIL' | 'SMS'>('EMAIL');
+  const [aiMessageTone, setAiMessageTone] = useState<AiOpsLlmMessageTone>('friendly');
+  const [aiMessageContext, setAiMessageContext] = useState<AiOpsLlmMessageContext>('general_update');
+  const [aiMessageExtraContext, setAiMessageExtraContext] = useState('');
+  const [aiCustomerMessage, setAiCustomerMessage] = useState<AiOpsLlmCustomerMessageDTO | null>(null);
+  const [aiCustomerMessageLoading, setAiCustomerMessageLoading] = useState(false);
+  const [aiCustomerMessageError, setAiCustomerMessageError] = useState<string | null>(null);
+  const [aiCustomerMessageGeneratedAt, setAiCustomerMessageGeneratedAt] = useState<Date | null>(null);
+
+  const parsedAiCustomerMessage = useMemo(() => {
+    if (!aiCustomerMessage?.message) {
+      return { subject: null as string | null, body: '' };
+    }
+
+    const lines = aiCustomerMessage.message.split(/\r?\n/);
+    const subjectLine = lines.find((l) => l.trim().toLowerCase().startsWith('subject:'));
+
+    if (!subjectLine) {
+      return { subject: null, body: aiCustomerMessage.message };
+    }
+
+    const subject = subjectLine.split(':').slice(1).join(':').trim();
+    const bodyLines = lines.filter((l) => l !== subjectLine);
+    const body = bodyLines.join('\n').trimStart();
+
+    return { subject: subject || null, body };
+  }, [aiCustomerMessage]);
 
   // Section expand/collapse
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
@@ -40,7 +74,14 @@ export default function AiOpsPage() {
     setError(null);
     setSummary(null);
     setRecommendations([]);
-    setCustomerMessage(null);
+
+    // Reset AI panels when selecting a new job
+    setAiSummary(null);
+    setAiSummaryError(null);
+    setAiSummaryGeneratedAt(null);
+    setAiCustomerMessage(null);
+    setAiCustomerMessageError(null);
+    setAiCustomerMessageGeneratedAt(null);
 
     try {
       const res = await fetch(`/api/v1/ai-ops/jobs/${encodeURIComponent(jobId.trim())}/insights`);
@@ -64,42 +105,56 @@ export default function AiOpsPage() {
     }
   };
 
-  const handleGenerateMessage = async () => {
-    if (!jobId.trim()) {
-      setError('Please load job insights first');
-      return;
-    }
+  const handleGenerateAiSummary = async () => {
+    if (!summary) return;
 
-    setGeneratingMessage(true);
+    setAiSummaryLoading(true);
+    setAiSummaryError(null);
 
     try {
-      const input: AiCustomerMessageRequestDTO = {
-        type: messageType,
-        tone,
-        customQuestion: messageType === 'GENERIC' && customQuestion ? customQuestion : undefined,
+      const data = await fetchLlmJobSummary(summary.jobId);
+      setAiSummary(data);
+      setAiSummaryGeneratedAt(new Date());
+    } catch (err) {
+      setAiSummaryError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setAiSummaryLoading(false);
+    }
+  };
+
+  const handleGenerateAiCustomerMessage = async () => {
+    if (!summary) return;
+
+    setAiCustomerMessageLoading(true);
+    setAiCustomerMessageError(null);
+
+    try {
+      const input: GenerateLlmCustomerMessageInput = {
+        tone: aiMessageTone,
+        context: aiMessageContext,
+        channel: aiMessageChannel,
+        extraContext: aiMessageExtraContext,
       };
 
-      const res = await fetch(
-        `/api/v1/ai-ops/jobs/${encodeURIComponent(jobId.trim())}/customer-message`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(input),
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error('Failed to generate message');
-      }
-
-      const data: AiCustomerMessageDTO = await res.json();
-      setCustomerMessage(data);
+      const data = await generateLlmCustomerMessage(summary.jobId, input);
+      setAiCustomerMessage(data);
+      setAiCustomerMessageGeneratedAt(new Date());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error generating message');
+      setAiCustomerMessageError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setGeneratingMessage(false);
+      setAiCustomerMessageLoading(false);
+    }
+  };
+
+  const handleCopyToClipboard = async (text: string) => {
+    try {
+      if (!navigator?.clipboard?.writeText) {
+        throw new Error('Clipboard API not available');
+      }
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error('Failed to copy to clipboard', err);
+      alert('Failed to copy to clipboard');
     }
   };
 
@@ -302,78 +357,213 @@ export default function AiOpsPage() {
         </Card>
       )}
 
-      {/* Customer Message Section */}
+      {/* AI Summary (LLM) Section */}
       {summary && (
-        <Card>
+        <Card className="mb-6">
           <Card.Header>
-            <h3 className="text-lg font-semibold text-gray-900">Draft Customer Message</h3>
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-lg font-semibold text-gray-900">AI Summary</h3>
+              <button
+                onClick={handleGenerateAiSummary}
+                disabled={aiSummaryLoading}
+                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-gray-400"
+              >
+                {aiSummaryLoading ? 'Generating...' : 'Generate AI Summary'}
+              </button>
+            </div>
+          </Card.Header>
+          <Card.Content className="p-6">
+            {aiSummaryError && (
+              <div className="mb-4 rounded bg-red-50 p-4 text-red-700">
+                <strong>Error:</strong> {aiSummaryError}
+              </div>
+            )}
+
+            {aiSummary ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                  {aiSummary.isFallback ? (
+                    <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-800">
+                      Fallback summary (LLM disabled/unavailable)
+                    </span>
+                  ) : (
+                    <span className="inline-flex rounded-full bg-green-100 px-2 py-1 font-semibold text-green-800">
+                      LLM
+                    </span>
+                  )}
+                  <span>
+                    <strong>Model:</strong> {aiSummary.model}
+                  </span>
+                  {aiSummaryGeneratedAt && (
+                    <span>
+                      <strong>Generated:</strong> {aiSummaryGeneratedAt.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="rounded border border-gray-200 bg-gray-50 p-4">
+                  <div className="whitespace-pre-wrap text-sm text-gray-800">
+                    {aiSummary.summary}
+                  </div>
+                </div>
+
+                {aiSummary.recommendations && aiSummary.recommendations.trim() && (
+                  <div className="rounded border border-gray-200 bg-white p-4">
+                    <div className="mb-2 text-sm font-medium text-gray-900">Recommendations</div>
+                    <div className="whitespace-pre-wrap text-sm text-gray-700">
+                      {aiSummary.recommendations}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Generate an AI summary for this job. If the AI model is disabled, a deterministic
+                fallback will be shown.
+              </p>
+            )}
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* AI Customer Message Draft (LLM) */}
+      {summary && (
+        <Card className="mb-6">
+          <Card.Header>
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-lg font-semibold text-gray-900">AI Customer Message Draft</h3>
+              <button
+                onClick={handleGenerateAiCustomerMessage}
+                disabled={aiCustomerMessageLoading}
+                className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-gray-400"
+              >
+                {aiCustomerMessageLoading ? 'Generating...' : 'Generate AI Message Draft'}
+              </button>
+            </div>
           </Card.Header>
           <Card.Content className="p-6">
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Message Type
-                </label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Channel</label>
                 <select
-                  value={messageType}
-                  onChange={(e) => setMessageType(e.target.value as AiCustomerMessageType)}
+                  value={aiMessageChannel}
+                  onChange={(e) => setAiMessageChannel(e.target.value as 'EMAIL' | 'SMS')}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="STATUS_UPDATE">Status Update</option>
-                  <option value="ETA_UPDATE">ETA Update</option>
-                  <option value="GENERIC">Generic</option>
+                  <option value="EMAIL">Email</option>
+                  <option value="SMS">SMS</option>
                 </select>
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Tone</label>
                 <select
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value as 'FRIENDLY' | 'FORMAL')}
+                  value={aiMessageTone}
+                  onChange={(e) => setAiMessageTone(e.target.value as AiOpsLlmMessageTone)}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="FRIENDLY">Friendly</option>
-                  <option value="FORMAL">Formal</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="formal">Formal</option>
+                  <option value="direct">Direct</option>
                 </select>
               </div>
 
-              {messageType === 'GENERIC' && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Custom Question (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={customQuestion}
-                    onChange={(e) => setCustomQuestion(e.target.value)}
-                    placeholder="e.g., your question about pricing"
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Context</label>
+                <select
+                  value={aiMessageContext}
+                  onChange={(e) => setAiMessageContext(e.target.value as AiOpsLlmMessageContext)}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="general_update">General update</option>
+                  <option value="payment_reminder">Payment reminder</option>
+                  <option value="scheduling">Scheduling</option>
+                  <option value="post_install">Post-install</option>
+                </select>
+              </div>
             </div>
 
-            <button
-              onClick={handleGenerateMessage}
-              disabled={generatingMessage}
-              className="mb-4 rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {generatingMessage ? 'Generating...' : 'Generate Message'}
-            </button>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Extra context (optional)
+              </label>
+              <textarea
+                value={aiMessageExtraContext}
+                onChange={(e) => setAiMessageExtraContext(e.target.value)}
+                rows={3}
+                placeholder="e.g., mention crew arrival window, pending permit, next steps..."
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
 
-            {customerMessage && (
-              <div className="rounded border border-gray-300 bg-gray-50 p-4">
-                <div className="mb-2 text-xs font-medium uppercase text-gray-500">
-                  {customerMessage.type.replace('_', ' ')}
+            {aiCustomerMessageError && (
+              <div className="mb-4 rounded bg-red-50 p-4 text-red-700">
+                <strong>Error:</strong> {aiCustomerMessageError}
+              </div>
+            )}
+
+            {aiCustomerMessage && (
+              <div className="space-y-3 rounded border border-gray-300 bg-gray-50 p-4">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                  {aiCustomerMessage.isFallback ? (
+                    <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-800">
+                      Fallback draft (LLM disabled/unavailable)
+                    </span>
+                  ) : (
+                    <span className="inline-flex rounded-full bg-green-100 px-2 py-1 font-semibold text-green-800">
+                      LLM
+                    </span>
+                  )}
+                  <span>
+                    <strong>Model:</strong> {aiCustomerMessage.model}
+                  </span>
+                  {aiCustomerMessageGeneratedAt && (
+                    <span>
+                      <strong>Generated:</strong> {aiCustomerMessageGeneratedAt.toLocaleString()}
+                    </span>
+                  )}
                 </div>
-                <textarea
-                  value={customerMessage.message}
-                  readOnly
-                  rows={8}
-                  className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
-                />
-                <div className="mt-2 text-xs text-gray-500">
-                  Review and edit before sending to customer.
+
+                {parsedAiCustomerMessage.subject && (
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-900">Subject</div>
+                      <button
+                        onClick={() => handleCopyToClipboard(parsedAiCustomerMessage.subject!)}
+                        className="text-xs font-medium text-blue-600 hover:underline"
+                        type="button"
+                      >
+                        Copy subject
+                      </button>
+                    </div>
+                    <input
+                      value={parsedAiCustomerMessage.subject}
+                      readOnly
+                      className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <div className="text-sm font-medium text-gray-900">Body</div>
+                    <button
+                      onClick={() => handleCopyToClipboard(parsedAiCustomerMessage.body)}
+                      className="text-xs font-medium text-blue-600 hover:underline"
+                      type="button"
+                    >
+                      Copy body
+                    </button>
+                  </div>
+                  <textarea
+                    value={parsedAiCustomerMessage.body}
+                    readOnly
+                    rows={8}
+                    className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
+                  />
+                  <div className="mt-2 text-xs text-gray-500">
+                    Draft-only: review and edit before sending to the customer.
+                  </div>
                 </div>
               </div>
             )}
