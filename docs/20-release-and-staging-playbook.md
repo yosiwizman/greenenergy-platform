@@ -114,9 +114,13 @@ Before deploying staging, ensure you have:
    - Start command: `node dist/main.js`
    - Watch patterns for auto-rebuilds
    - **No manual root directory configuration needed**
-4. Add environment variables (see section 3 below)
-5. Railway builds and deploys
-6. **Note the public URL** (e.g., `https://staging-api.railway.app`)
+4. The Dockerfile uses the monorepo root build pipeline:
+   - Root `tsconfig*.json` and `turbo.json` are copied for TypeScript path resolution
+   - Build runs from monorepo root via `pnpm build --filter @greenenergy/core-api...`
+   - This ensures workspace packages (`@greenenergy/db`, `@greenenergy/shared-types`, etc.) resolve correctly
+5. Add environment variables (see section 3 below)
+6. Railway builds and deploys
+7. **Note the public URL** (e.g., `https://staging-api.railway.app`)
 
 #### Step 3: Run Database Migrations
 

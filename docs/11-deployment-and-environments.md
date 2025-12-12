@@ -254,6 +254,9 @@ Railway automatically detects and uses `railway.json` as the canonical configura
    - `QB_ENABLED`, `QB_CLIENT_ID`, `QB_CLIENT_SECRET`, `QB_REFRESH_TOKEN`, etc.
    - `PORTAL_BASE_URL`, `PORTAL_ORIGIN`, `INTERNAL_API_KEY`
 5. Railway will build using the Dockerfile at `apps/core-api/Dockerfile`
+   - The Dockerfile uses the monorepo root build pipeline to ensure proper TypeScript path resolution
+   - Root `tsconfig*.json` and `turbo.json` are copied into the build context for workspace package resolution
+   - Build runs from monorepo root via `pnpm build --filter @greenenergy/core-api...`
 6. Once deployed, Railway assigns a public URL: `https://greenenergy-production.up.railway.app`
 7. Update Vercel environment variables with this URL
 

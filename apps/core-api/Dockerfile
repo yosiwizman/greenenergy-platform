@@ -37,6 +37,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
 COPY --from=deps /app/apps/core-api/node_modules ./apps/core-api/node_modules
 
+# Copy root tsconfig files for path mappings
+COPY tsconfig*.json ./
+
+# Copy turbo.json for build orchestration
+COPY turbo.json ./
+
 # Copy source code
 COPY packages/ ./packages/
 COPY apps/core-api/ ./apps/core-api/
@@ -45,9 +51,9 @@ COPY apps/core-api/ ./apps/core-api/
 WORKDIR /app/packages/db
 RUN pnpm prisma generate
 
-# Build NestJS app
-WORKDIR /app/apps/core-api
-RUN pnpm build
+# Build from monorepo root with workspace awareness
+WORKDIR /app
+RUN pnpm build --filter @greenenergy/core-api...
 
 # ========================================
 # Stage 4: Production runner
