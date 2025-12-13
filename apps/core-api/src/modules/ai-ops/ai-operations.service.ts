@@ -13,6 +13,7 @@ import type {
   AiOpsLlmCustomerMessageDTO,
 } from '@greenenergy/shared-types';
 import { LlmService } from '../llm/llm.service';
+import { LlmUsageService } from '../llm-usage/llm-usage.service';
 
 @Injectable()
 export class AiOperationsService {
@@ -20,6 +21,7 @@ export class AiOperationsService {
 
   constructor(
     private readonly llmService: LlmService,
+    private readonly llmUsageService: LlmUsageService,
     private readonly configService: ConfigService
   ) {}
 
@@ -587,6 +589,26 @@ export class AiOperationsService {
     
     if (!enableAiOps || !this.llmService.isEnabled()) {
       this.logger.log(`LLM disabled for AI Ops, using fallback for job: ${jobId}`);
+
+      const environment = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'unknown';
+      void this.llmUsageService.logCall({
+        feature: 'AI_OPS_JOB_SUMMARY',
+        jobId,
+        provider: this.configService.get<string>('LLM_PROVIDER') ?? null,
+        model: 'deterministic-fallback',
+        tokensIn: null,
+        tokensOut: null,
+        durationMs: null,
+        isFallback: true,
+        success: true,
+        errorCode: !enableAiOps
+          ? 'LLM_DISABLED'
+          : !this.llmService.isEnabled()
+          ? 'LLM_NOT_CONFIGURED'
+          : null,
+        environment,
+      });
+
       const fallback = await this.getJobSummary(jobId);
       return {
         jobId,
@@ -598,6 +620,8 @@ export class AiOperationsService {
         isFallback: true,
       };
     }
+
+    let llmStartedAt: number | null = null;
 
     try {
       const context = await this.buildJobContextForLlm(jobId);
@@ -619,10 +643,30 @@ Return:
 
 Keep under 500 words.`;
 
+      llmStartedAt = Date.now();
       const result = await this.llmService.generateText({
         systemPrompt,
         userPrompt,
         input: { purpose: 'AI_OPS_SUMMARY' },
+      });
+      const durationMs = Date.now() - llmStartedAt;
+
+      const environment = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'unknown';
+      void this.llmUsageService.logCall({
+        feature: 'AI_OPS_JOB_SUMMARY',
+        jobId,
+        provider: this.configService.get<string>('LLM_PROVIDER') ?? null,
+        model: result.model,
+        tokensIn: result.usage?.promptTokens ?? null,
+        tokensOut: result.usage?.completionTokens ?? null,
+        durationMs,
+        isFallback: false,
+        success: true,
+        errorCode: null,
+        environment,
+        meta: {
+          purpose: 'AI_OPS_SUMMARY',
+        },
       });
 
       return {
@@ -634,6 +678,22 @@ Keep under 500 words.`;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`LLM generation failed for job ${jobId}: ${errorMessage}`);
+
+      const environment = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'unknown';
+      void this.llmUsageService.logCall({
+        feature: 'AI_OPS_JOB_SUMMARY',
+        jobId,
+        provider: this.configService.get<string>('LLM_PROVIDER') ?? null,
+        model: 'deterministic-fallback',
+        tokensIn: null,
+        tokensOut: null,
+        durationMs: llmStartedAt ? Date.now() - llmStartedAt : null,
+        isFallback: true,
+        success: true,
+        errorCode: errorMessage,
+        environment,
+      });
+
       const fallback = await this.getJobSummary(jobId);
       return {
         jobId,
@@ -659,6 +719,30 @@ Keep under 500 words.`;
 
     if (!enableCxMessages || !this.llmService.isEnabled()) {
       this.logger.log(`LLM disabled for CX messages, using fallback for job: ${input.jobId}`);
+
+      const environment = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'unknown';
+      void this.llmUsageService.logCall({
+        feature: 'AI_OPS_CUSTOMER_MESSAGE',
+        jobId: input.jobId,
+        provider: this.configService.get<string>('LLM_PROVIDER') ?? null,
+        model: 'deterministic-fallback',
+        tokensIn: null,
+        tokensOut: null,
+        durationMs: null,
+        isFallback: true,
+        success: true,
+        errorCode: !enableCxMessages
+          ? 'LLM_DISABLED'
+          : !this.llmService.isEnabled()
+          ? 'LLM_NOT_CONFIGURED'
+          : null,
+        environment,
+        meta: {
+          tone,
+          context: input.context ?? 'general_update',
+        },
+      });
+
       const fallback = await this.buildTemplateCustomerMessage(input);
       return {
         jobId: input.jobId,
@@ -668,6 +752,8 @@ Keep under 500 words.`;
         isFallback: true,
       };
     }
+
+    let llmStartedAt: number | null = null;
 
     try {
       const context = await this.buildJobContextForLlm(input.jobId);
@@ -690,10 +776,32 @@ ${context}
 Write a message to the customer with context "${contextType}".
 Keep it under 180 words. Avoid legal promises or guarantees.`;
 
+      llmStartedAt = Date.now();
       const result = await this.llmService.generateText({
         systemPrompt,
         userPrompt,
         input: { purpose: 'CX_MESSAGE' },
+      });
+      const durationMs = Date.now() - llmStartedAt;
+
+      const environment = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'unknown';
+      void this.llmUsageService.logCall({
+        feature: 'AI_OPS_CUSTOMER_MESSAGE',
+        jobId: input.jobId,
+        provider: this.configService.get<string>('LLM_PROVIDER') ?? null,
+        model: result.model,
+        tokensIn: result.usage?.promptTokens ?? null,
+        tokensOut: result.usage?.completionTokens ?? null,
+        durationMs,
+        isFallback: false,
+        success: true,
+        errorCode: null,
+        environment,
+        meta: {
+          purpose: 'CX_MESSAGE',
+          tone,
+          context: input.context ?? 'general_update',
+        },
       });
 
       return {
@@ -708,6 +816,26 @@ Keep it under 180 words. Avoid legal promises or guarantees.`;
       this.logger.error(
         `LLM generation failed for customer message job ${input.jobId}: ${errorMessage}`
       );
+
+      const environment = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'unknown';
+      void this.llmUsageService.logCall({
+        feature: 'AI_OPS_CUSTOMER_MESSAGE',
+        jobId: input.jobId,
+        provider: this.configService.get<string>('LLM_PROVIDER') ?? null,
+        model: 'deterministic-fallback',
+        tokensIn: null,
+        tokensOut: null,
+        durationMs: llmStartedAt ? Date.now() - llmStartedAt : null,
+        isFallback: true,
+        success: true,
+        errorCode: errorMessage,
+        environment,
+        meta: {
+          tone,
+          context: input.context ?? 'general_update',
+        },
+      });
+
       const fallback = await this.buildTemplateCustomerMessage(input);
       return {
         jobId: input.jobId,

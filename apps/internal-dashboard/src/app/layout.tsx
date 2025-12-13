@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Schedule', href: '/schedule' },
     { name: 'Dispatch', href: '/dispatch' },
     { name: 'AI Assistant', href: '/ai-ops' },
+    { name: 'LLM Usage', href: '/llm-usage' },
     { name: 'Profit', href: '/profit' },
     { name: 'Workflows', href: '/workflows' },
     { name: 'Home', href: '/' },

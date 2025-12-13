@@ -518,6 +518,45 @@ model WorkflowActionLog {
   @@map("workflow_action_logs")
 }
 
+// Phase 10 Sprint 5: LLM usage monitoring (append-only)
+model LlmCallLog {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+
+  // What feature triggered this call (e.g. AI_OPS_JOB_SUMMARY, AI_OPS_CUSTOMER_MESSAGE)
+  feature        String
+
+  // Optional context identifiers (string to avoid schema coupling)
+  jobId          String?
+  customerId     String?
+  internalUserId String?
+
+  // Provider + model metadata
+  provider       String?
+  model          String?
+
+  // Token + latency metrics (all optional)
+  tokensIn       Int?
+  tokensOut      Int?
+  durationMs     Int?
+
+  // Outcome
+  isFallback     Boolean
+  success        Boolean
+  errorCode      String?
+
+  // Environment label (e.g. "staging", "production")
+  environment    String?
+
+  // Additional arbitrary metadata (e.g. prompt size buckets, channel, etc.)
+  meta           Json?    @db.JsonB
+
+  @@index([createdAt])
+  @@index([feature])
+  @@index([model])
+  @@map("llm_call_logs")
+}
+
 model CustomerMessage {
   id           String   @id @default(cuid())
   jobId        String
