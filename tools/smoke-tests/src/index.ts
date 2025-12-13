@@ -119,9 +119,18 @@ class SmokeTestRunner {
       });
 
       if (response.ok) {
-        const data = await response.json() as { jobs?: unknown; subcontractors?: unknown; materials?: unknown };
-        // Validate shape of CommandCenterOverviewDTO
-        if (data.jobs !== undefined && data.subcontractors !== undefined && data.materials !== undefined) {
+        const data = await response.json() as {
+          summary?: unknown;
+          roleViews?: unknown;
+          jobsNeedingAttention?: unknown;
+        };
+
+        // Validate shape of CommandCenterOverviewDTO (from @greenenergy/shared-types)
+        if (
+          data.summary !== undefined &&
+          data.roleViews !== undefined &&
+          Array.isArray(data.jobsNeedingAttention)
+        ) {
           this.recordSuccess(checkName, response.status, 'Command Center data loaded');
         } else {
           this.recordFailure(checkName, response.status, 'Invalid response shape');
