@@ -138,9 +138,9 @@ railway run npx prisma migrate deploy
    - **Framework**: Next.js
    - **Root Directory**: `apps/internal-dashboard`
    - **Build Command**: `cd ../.. && pnpm install && pnpm build --filter @greenenergy/internal-dashboard`
-4. Add environment variables:
-   - `NEXT_PUBLIC_API_BASE_URL` = Railway API URL + `/api/v1`
-   - `NEXT_PUBLIC_INTERNAL_API_KEY` = Your internal API key
+4. Add environment variables (**server-only**, do **not** use `NEXT_PUBLIC_`):
+   - `CORE_API_BASE_URL` = Railway API URL (no `/api/v1`)
+   - `INTERNAL_API_KEY` = Your internal API key
 5. Deploy
 
 #### Step 5: Deploy Customer Portal on Vercel
@@ -193,8 +193,9 @@ QB_BASE_URL=https://quickbooks.api.intuit.com
 ### 3.2 Internal Dashboard (Vercel)
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://staging-api.railway.app/api/v1
-NEXT_PUBLIC_INTERNAL_API_KEY=your-secure-internal-api-key
+# Server-only (do not use NEXT_PUBLIC_)
+CORE_API_BASE_URL=https://staging-api.railway.app
+INTERNAL_API_KEY=your-secure-internal-api-key
 ```
 
 ### 3.3 Customer Portal (Vercel)
@@ -298,6 +299,18 @@ Proceed with manual UI verification as documented.
 ### 5.3 Running Smoke Tests in CI
 
 **GitHub Actions Workflow**: `.github/workflows/staging-smoke.yml`
+
+### 5.4 UI Smoke Tests (Playwright)
+
+The Playwright UI smoke suite runs against the deployed staging Vercel apps (no local server required):
+
+```bash
+pnpm test:ui:staging
+```
+
+**GitHub Actions Workflow**: `.github/workflows/staging-ui-smoke.yml` (runs daily and on-demand).
+
+No secrets are required by the UI smoke workflow; it validates that key pages render and that there are no console errors or failing `/api/v1/*` requests on the deployed apps.
 
 **Triggers**:
 - **Manual**: Go to Actions → Staging Smoke Tests → Run workflow

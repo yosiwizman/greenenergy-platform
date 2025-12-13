@@ -4,20 +4,7 @@ import type {
   AiOpsLlmJobSummaryDTO,
 } from '@greenenergy/shared-types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api/v1';
-const INTERNAL_API_KEY = process.env.NEXT_PUBLIC_INTERNAL_API_KEY;
-
-function buildHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  if (INTERNAL_API_KEY) {
-    headers['x-internal-api-key'] = INTERNAL_API_KEY;
-  }
-
-  return headers;
-}
+const API_BASE_URL = '/api/v1';
 
 async function readErrorBody(res: Response): Promise<string> {
   try {
@@ -33,7 +20,9 @@ export async function fetchLlmJobSummary(jobId: string): Promise<AiOpsLlmJobSumm
     `${API_BASE_URL}/ai-ops/jobs/${encodeURIComponent(jobId)}/summary/llm`,
     {
       method: 'POST',
-      headers: buildHeaders(),
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({}),
     }
   );
@@ -77,7 +66,9 @@ export async function generateLlmCustomerMessage(
     `${API_BASE_URL}/ai-ops/jobs/${encodeURIComponent(jobId)}/customer-message/llm`,
     {
       method: 'POST',
-      headers: buildHeaders(),
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         tone: input.tone,
         context: contextForApi,
