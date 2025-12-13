@@ -84,7 +84,7 @@ class SmokeTestRunner {
   private async checkApiHealth(): Promise<void> {
     const checkName = 'API Health Check';
     try {
-      const response = await fetch(`${this.apiBaseUrl}/health`, {
+      const response = await fetch(`${this.apiBaseUrl}/api/v1/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

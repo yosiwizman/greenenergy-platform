@@ -14,7 +14,7 @@ import type {
  * Finance API Controller (Phase 5 Sprint 1)
  * Provides read-only AR and payment tracking endpoints
  */
-@Controller('api/v1/finance')
+@Controller('finance')
 @UseGuards(InternalApiKeyGuard)
 export class FinanceController {
   private readonly logger = new Logger(FinanceController.name);

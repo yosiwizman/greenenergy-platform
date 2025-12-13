@@ -6,7 +6,7 @@ import type {
   JobProfitabilityLevel,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/profit')
+@Controller('profit')
 export class ProfitabilityController {
   constructor(private readonly profitabilityService: ProfitabilityService) {}
 

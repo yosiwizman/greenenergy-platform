@@ -275,8 +275,8 @@ The script will:
 
 1. Validate that all required environment variables are set
 2. Test 6 critical endpoints/pages:
-   - API health check (`/health`)
-   - Command Center Overview API (`/api/v1/command-center/overview`)
+  - API health check (`/api/v1/health`)
+  - Command Center Overview API (`/api/v1/command-center/overview`)
    - Workflow Rules API (`/api/v1/workflows/rules`)
    - Internal Dashboard command center page
    - Internal Dashboard workflows page
@@ -519,7 +519,7 @@ After successful deployment and verification:
 
 The `@greenenergy/smoke-tests` package performs the following checks:
 
-1. **API Health Check**: `GET /health`
+1. **API Health Check**: `GET /api/v1/health`
    - Expects `{ status: 'ok' }`
 2. **Command Center Overview API**: `GET /api/v1/command-center/overview`
    - Requires `x-internal-api-key` header

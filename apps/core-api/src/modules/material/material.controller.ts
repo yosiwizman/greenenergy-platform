@@ -18,7 +18,7 @@ import type {
   UpdateMaterialOrderDto,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/material-orders')
+@Controller('material-orders')
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
 

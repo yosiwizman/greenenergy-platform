@@ -2,7 +2,7 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { SchedulingService } from './scheduling.service';
 import type { SchedulingRiskDTO } from '@greenenergy/shared-types';
 
-@Controller('api/v1/scheduling')
+@Controller('scheduling')
 export class SchedulingController {
   constructor(private readonly schedulingService: SchedulingService) {}
 

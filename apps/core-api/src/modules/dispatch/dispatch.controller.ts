@@ -7,7 +7,7 @@ import type { DispatchOverviewDTO, DispatchRecommendationDTO } from '@greenenerg
  * DispatchController exposes AI dispatch endpoints for the internal dashboard
  * All endpoints are protected by InternalApiKeyGuard
  */
-@Controller('api/v1/dispatch')
+@Controller('dispatch')
 @UseGuards(InternalApiKeyGuard)
 export class DispatchController {
   private readonly logger = new Logger(DispatchController.name);

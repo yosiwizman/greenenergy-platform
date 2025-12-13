@@ -3,7 +3,7 @@ import { ExecutiveReportService } from './executive-report.service';
 import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
 import type { ExecutiveDigestDTO } from '@greenenergy/shared-types';
 
-@Controller('api/v1/exec-report')
+@Controller('exec-report')
 @UseGuards(InternalApiKeyGuard)
 export class ExecutiveReportController {
   constructor(private readonly executiveReportService: ExecutiveReportService) {}

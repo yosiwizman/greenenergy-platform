@@ -454,7 +454,11 @@ transpilePackages: ['@greenenergy/ui', '@greenenergy/shared-types']
 
 **Phase 3 Sprint 8** introduced automated smoke tests for validating deployed environments.
 
-After deployment, run smoke tests to verify critical endpoints and pages:
+After deployment, run smoke tests to verify critical endpoints and pages.
+
+Notes:
+- The Core API is mounted under a single prefix: `/api/v1/*`.
+- Health check endpoint: `/api/v1/health`.
 
 ```bash
 # Set environment variables (in .env or shell)

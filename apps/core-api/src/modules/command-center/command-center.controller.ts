@@ -10,7 +10,7 @@ import type {
  * CommandCenterController exposes internal APIs for the command center dashboard
  * All endpoints are protected by InternalApiKeyGuard
  */
-@Controller('api/v1/command-center')
+@Controller('command-center')
 @UseGuards(InternalApiKeyGuard)
 export class CommandCenterController {
   private readonly logger = new Logger(CommandCenterController.name);

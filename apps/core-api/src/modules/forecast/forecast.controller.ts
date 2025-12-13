@@ -11,7 +11,7 @@ import type {
  * Forecast API Controller (Phase 6 Sprint 1)
  * Provides executive-level forecasting endpoints
  */
-@Controller('api/v1/forecast')
+@Controller('forecast')
 @UseGuards(InternalApiKeyGuard)
 export class ForecastController {
   private readonly logger = new Logger(ForecastController.name);

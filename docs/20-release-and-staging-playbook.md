@@ -241,7 +241,7 @@ After adding secrets:
 
 The smoke test script (`tools/smoke-tests`) validates that:
 
-1. **API Health Check**: Core API `/health` endpoint returns `{ status: 'ok' }`
+1. **API Health Check**: Core API `/api/v1/health` endpoint returns `{ status: 'ok' }`
 2. **Command Center Overview API**: Protected endpoint accessible with internal API key
 3. **Workflow Rules API**: Returns array of workflow rules
 4. **Internal Dashboard Pages**: Command center and workflows pages load correctly

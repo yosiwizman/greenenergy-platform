@@ -13,7 +13,7 @@ import type {
   SafetyChecklistType,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/safety')
+@Controller('safety')
 export class SafetyController {
   constructor(private readonly safetyService: SafetyService) {}
 
