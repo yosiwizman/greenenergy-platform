@@ -23,7 +23,7 @@ import type {
   AssignSubcontractorDto,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/subcontractors')
+@Controller('subcontractors')
 export class SubcontractorController {
   constructor(private readonly subcontractorService: SubcontractorService) {}
 
@@ -137,7 +137,7 @@ export class SubcontractorController {
   }
 }
 
-@Controller('api/v1/jobs')
+@Controller('jobs')
 export class JobSubcontractorController {
   constructor(private readonly subcontractorService: SubcontractorService) {}
 

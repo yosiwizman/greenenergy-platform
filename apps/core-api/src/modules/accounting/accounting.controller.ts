@@ -8,7 +8,7 @@ import { InternalApiKeyGuard } from '../guards/internal-api-key.guard';
  *
  * All endpoints are protected by InternalApiKeyGuard.
  */
-@Controller('api/v1/accounting')
+@Controller('accounting')
 @UseGuards(InternalApiKeyGuard)
 export class AccountingController {
   private readonly logger = new Logger(AccountingController.name);

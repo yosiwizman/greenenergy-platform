@@ -12,7 +12,7 @@ import type {
  * WorkflowController exposes internal APIs for workflow automation
  * All endpoints are protected by InternalApiKeyGuard
  */
-@Controller('api/v1/workflows')
+@Controller('workflows')
 @UseGuards(InternalApiKeyGuard)
 export class WorkflowController {
   private readonly logger = new Logger(WorkflowController.name);

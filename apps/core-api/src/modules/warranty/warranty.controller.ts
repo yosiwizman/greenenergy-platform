@@ -19,7 +19,7 @@ import type {
   WarrantySummaryDTO,
 } from '@greenenergy/shared-types';
 
-@Controller('/api/v1/warranty')
+@Controller('warranty')
 export class WarrantyController {
   constructor(private readonly warrantyService: WarrantyService) {}
 

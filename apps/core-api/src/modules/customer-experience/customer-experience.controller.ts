@@ -16,7 +16,7 @@ import type {
   CustomerMessageType,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/cx')
+@Controller('cx')
 @UseGuards(InternalApiKeyGuard)
 export class CustomerExperienceController {
   constructor(private readonly cxService: CustomerExperienceService) {}

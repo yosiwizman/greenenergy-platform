@@ -10,7 +10,7 @@ import type {
   AiOpsLlmCustomerMessageDTO,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/ai-ops')
+@Controller('ai-ops')
 export class AiOpsController {
   constructor(private readonly aiOpsService: AiOperationsService) {}
 

@@ -38,6 +38,9 @@ Thumbs.db
 *.swo
 *~
 
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+
 # Turborepo
 .turbo
 
@@ -47,3 +50,4 @@ prisma/migrations/
 # Temporary files
 *.tmp
 .cache/
+.vercel

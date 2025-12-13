@@ -26,7 +26,7 @@ import type {
   CustomerMessageDTO,
 } from '@greenenergy/shared-types';
 
-@Controller('api/v1/portal')
+@Controller('portal')
 export class CustomerPortalController {
   constructor(
     private readonly portalService: CustomerPortalService,
