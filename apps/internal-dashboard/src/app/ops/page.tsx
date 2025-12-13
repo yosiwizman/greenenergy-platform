@@ -2,10 +2,10 @@ import { Card } from '@greenenergy/ui';
 import type { OpsStatusDTO, ExternalServiceHealthDTO } from '@greenenergy/shared-types';
 
 async function getOpsStatus(): Promise<OpsStatusDTO> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL!;
-  const apiKey = process.env.NEXT_PUBLIC_INTERNAL_API_KEY!;
+  const baseUrl = process.env.CORE_API_BASE_URL!;
+  const apiKey = process.env.INTERNAL_API_KEY!;
 
-  const res = await fetch(`${baseUrl}/ops/status`, {
+  const res = await fetch(`${baseUrl}/api/v1/ops/status`, {
     headers: {
       'x-internal-api-key': apiKey,
     },

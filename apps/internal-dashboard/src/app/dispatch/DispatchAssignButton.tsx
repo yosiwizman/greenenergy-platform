@@ -29,7 +29,7 @@ export function DispatchAssignButton({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-internal-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
+          'x-internal-api-key': '',
         },
         body: JSON.stringify({
           subcontractorId,

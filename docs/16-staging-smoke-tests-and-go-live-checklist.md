@@ -134,8 +134,9 @@ NEXT_PUBLIC_API_BASE_URL=https://api-greenenergy.up.railway.app/api/v1
 ### 3.3 Internal Dashboard (Vercel)
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://api-greenenergy.up.railway.app/api/v1
-NEXT_PUBLIC_INTERNAL_API_KEY=your-secure-internal-api-key
+# Server-only (do not use NEXT_PUBLIC_)
+CORE_API_BASE_URL=https://api-greenenergy.up.railway.app
+INTERNAL_API_KEY=your-secure-internal-api-key
 ```
 
 ### 3.4 Smoke Tests (Local & CI)
@@ -244,9 +245,10 @@ STAGING_INTERNAL_API_KEY=your-secure-internal-api-key
 - **Root Directory**: `apps/internal-dashboard`
 - **Build Command**: `cd ../.. && pnpm install && pnpm build --filter @greenenergy/internal-dashboard`
 - **Environment Variables**:
-  - `NEXT_PUBLIC_API_BASE_URL` = `https://greenenergy-production.up.railway.app/api/v1`
-  - `NEXT_PUBLIC_INTERNAL_API_KEY` = `your-secure-internal-api-key`  
-    *(same value as `INTERNAL_API_KEY` in Core API)*
+  - `CORE_API_BASE_URL` = `https://greenenergy-production.up.railway.app` *(no `/api/v1`)*
+  - `INTERNAL_API_KEY` = `your-secure-internal-api-key` *(same value as `INTERNAL_API_KEY` in Core API)*
+
+These must be **server-only** variables on Vercel (do not use the `NEXT_PUBLIC_` prefix).
 
 ### 4.6 Configure Smoke Test Environment Variables
 

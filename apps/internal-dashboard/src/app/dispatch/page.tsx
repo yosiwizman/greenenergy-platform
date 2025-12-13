@@ -4,12 +4,12 @@ import type { DispatchOverviewDTO } from '@greenenergy/shared-types';
 import { DispatchAssignButton } from './DispatchAssignButton';
 
 async function getDispatchData(date?: string): Promise<DispatchOverviewDTO> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL!;
-  const apiKey = process.env.NEXT_PUBLIC_INTERNAL_API_KEY!;
+  const baseUrl = process.env.CORE_API_BASE_URL!;
+  const apiKey = process.env.INTERNAL_API_KEY!;
 
   const url = date
-    ? `${baseUrl}/dispatch/overview?date=${date}`
-    : `${baseUrl}/dispatch/overview`;
+    ? `${baseUrl}/api/v1/dispatch/overview?date=${date}`
+    : `${baseUrl}/api/v1/dispatch/overview`;
 
   const res = await fetch(url, {
     headers: {

@@ -109,7 +109,7 @@ export default function ProfitPage() {
       const response = await fetch(`/api/v1/accounting/jobs/${jobId}/sync`, {
         method: 'POST',
         headers: {
-          'x-internal-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
+          'x-internal-api-key': '',
         },
       });
 
@@ -133,7 +133,7 @@ export default function ProfitPage() {
       const response = await fetch('/api/v1/accounting/sync-all', {
         method: 'POST',
         headers: {
-          'x-internal-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
+          'x-internal-api-key': '',
         },
       });
 

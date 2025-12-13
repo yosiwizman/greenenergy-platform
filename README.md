@@ -91,8 +91,9 @@ pnpm build        # Build all apps and packages
 pnpm lint         # Lint all code
 pnpm test         # Run all tests
 pnpm format       # Format code with Prettier
-pnpm typecheck    # Type-check all TypeScript code
-pnpm smoke:staging # Run staging smoke tests (requires env vars)
+pnpm typecheck     # Type-check all TypeScript code
+pnpm smoke:staging  # Run staging smoke tests (requires env vars)
+pnpm test:ui:staging # Run Playwright UI smoke tests against deployed staging URLs
 ```
 
 ### Package-Specific
@@ -1068,6 +1069,9 @@ STAGING_INTERNAL_API_KEY=your-internal-api-key
 # 2. Run smoke tests locally:
 pnpm smoke:staging
 
+# 3. Run UI smoke tests (Playwright) locally (hits deployed staging URLs):
+pnpm test:ui:staging
+
 # Or trigger via GitHub Actions:
 # Go to Actions → Staging Smoke Tests → Run workflow
 ```
@@ -1084,6 +1088,7 @@ All checks must pass before proceeding with manual verification.
 **GitHub Actions CI/CD**:
 - **Standard CI** (`.github/workflows/ci.yml`): Runs on every push/PR (install, lint, test, build)
 - **Staging Smoke Tests** (`.github/workflows/staging-smoke.yml`): Runs daily at 09:00 UTC and on-demand
+- **Staging UI Smoke Tests** (`.github/workflows/staging-ui-smoke.yml`): Runs daily and on-demand (Playwright against deployed staging URLs)
 - Environment variables stored as **GitHub Secrets** for automated testing
 
 **Release Checklist v1**:

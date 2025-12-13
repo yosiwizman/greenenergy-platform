@@ -35,14 +35,8 @@ function EmbedPortalContent() {
       const sessionData = await sessionResponse.json();
 
       // Fetch portal view for the job (internal endpoint)
-      const portalResponse = await fetch(
-        `/api/v1/portal/internal/jobs/${sessionData.jobId}`,
-        {
-          headers: {
-            'x-internal-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
-          },
-        }
-      );
+      // Auth is applied server-side by the same-origin /api/v1 proxy route.
+      const portalResponse = await fetch(`/api/v1/portal/internal/jobs/${sessionData.jobId}`);
       if (!portalResponse.ok) {
         throw new Error(`Failed to fetch portal data: ${portalResponse.statusText}`);
       }
