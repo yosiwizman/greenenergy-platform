@@ -1229,3 +1229,66 @@ export interface AiOpsLlmCustomerMessageDTO {
   model: string;
   isFallback: boolean;
 }
+
+// LLM Usage Monitoring Types (Phase 10 Sprint 5)
+export type LlmFeature = 'AI_OPS_JOB_SUMMARY' | 'AI_OPS_CUSTOMER_MESSAGE';
+
+export interface LlmUsageBreakdownItemDTO {
+  key: string; // feature name or model name
+  calls: number;
+  successCalls: number;
+  fallbackCalls: number;
+  errorCalls: number;
+  tokensInTotal: number;
+  tokensOutTotal: number;
+  estimatedCostUsd: number; // rough estimate, rounded to 4 decimals
+}
+
+export interface LlmUsageSummaryDTO {
+  generatedAt: string; // ISO timestamp
+  days: number;
+
+  totalCalls: number;
+  successCalls: number;
+  fallbackCalls: number;
+  errorCalls: number;
+
+  tokensInTotal: number;
+  tokensOutTotal: number;
+  estimatedCostUsd: number;
+
+  byFeature: Array<
+    LlmUsageBreakdownItemDTO & {
+      feature: LlmFeature;
+    }
+  >;
+
+  byModel: Array<
+    LlmUsageBreakdownItemDTO & {
+      model: string;
+    }
+  >;
+}
+
+export interface LlmUsageListItemDTO {
+  id: string;
+  createdAt: string; // ISO timestamp
+  feature: LlmFeature;
+
+  jobId?: string | null;
+  customerId?: string | null;
+  internalUserId?: string | null;
+
+  provider?: string | null;
+  model?: string | null;
+  tokensIn?: number | null;
+  tokensOut?: number | null;
+  durationMs?: number | null;
+
+  isFallback: boolean;
+  success: boolean;
+  errorCode?: string | null;
+  environment?: string | null;
+
+  meta?: Record<string, unknown> | null;
+}

@@ -26,6 +26,7 @@ import { ExecutiveReportModule } from './modules/executive-report/executive-repo
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { OpsStatusModule } from './modules/ops-status/ops-status.module';
 import { LlmModule } from './modules/llm/llm.module';
+import { LlmUsageModule } from './modules/llm-usage/llm-usage.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -35,6 +36,7 @@ import { HealthController } from './health.controller';
     }),
     ScheduleModule.forRoot(),
     LlmModule,
+    LlmUsageModule,
     MetricsModule,
     OpsStatusModule,
     JobModule,

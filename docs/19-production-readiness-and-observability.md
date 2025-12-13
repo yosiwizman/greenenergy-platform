@@ -151,7 +151,30 @@ The internal dashboard now includes an **Operations Status** page accessible at 
 
 **Access**: Navigate to `http://localhost:3002/ops` (or your internal dashboard URL).
 
-### 4. Health Checks
+### 4. LLM Usage Monitoring Console (Phase 10 Sprint 5)
+
+The core API records LLM usage events to an append-only `llm_call_logs` table to help operators track:
+- Call volume
+- Success vs fallback vs errors
+- Usage by feature/model
+- Rough cost estimate
+- Recent-call audit log
+
+#### API Endpoints
+
+Protected with `InternalApiKeyGuard` (requires `x-internal-api-key` header).
+
+- `GET /api/v1/llm-usage/summary?days=7|30|90`
+- `GET /api/v1/llm-usage/recent?limit=50`
+
+#### Internal Dashboard: `/llm-usage`
+
+The internal dashboard includes an **LLM Usage Monitoring** page at `/llm-usage` showing:
+- Summary cards (calls, success/fallback/errors, estimated cost)
+- Breakdown tables (by feature, by model)
+- Recent call audit table (timestamps, tokens, duration, outcome)
+
+### 5. Health Checks
 
 #### Service Status Determination
 

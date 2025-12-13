@@ -221,6 +221,54 @@ Notes:
 
 ---
 
+## LLM Usage Monitoring Console (Phase 10 Sprint 5)
+
+Phase 10 Sprint 5 adds **best-effort LLM usage logging** and a lightweight internal console so operators can monitor:
+- Call volume
+- Success vs fallback vs errors
+- Usage by feature and model
+- Rough cost estimate
+- Recent-call audit log
+
+### Database: `LlmCallLog`
+
+LLM calls are stored in an append-only Postgres table:
+- Prisma model: `LlmCallLog`
+- Table: `llm_call_logs`
+
+Key fields include:
+- `feature` (e.g. `AI_OPS_JOB_SUMMARY`, `AI_OPS_CUSTOMER_MESSAGE`)
+- `provider`, `model`
+- `tokensIn`, `tokensOut`, `durationMs`
+- `isFallback`, `success`, `errorCode`
+- `environment` (e.g. staging/production)
+
+### Internal API Endpoints
+
+Protected with `InternalApiKeyGuard` (`x-internal-api-key` header required):
+- `GET /api/v1/llm-usage/summary?days=7|30|90`
+- `GET /api/v1/llm-usage/recent?limit=50`
+
+### Internal Dashboard
+
+Navigate to `/llm-usage` in the internal dashboard to view the summary cards, breakdown tables, and recent audit log.
+
+### Logging Guarantees
+
+- Logging is **best-effort** and should never break the user-facing request.
+- Fallback events are logged as `isFallback: true` and `success: true`.
+- Hard failures (no fallback) should be logged as `success: false`.
+
+### Cost Estimate
+
+Summary endpoints compute a rough cost estimate based on token counts using GPT-4o-mini-like pricing:
+- Input tokens: `$0.15 / 1M`
+- Output tokens: `$0.60 / 1M`
+
+Values are rounded to **4 decimals**.
+
+---
+
 ## Testing
 
 ### Unit Tests

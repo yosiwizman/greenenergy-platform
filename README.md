@@ -14,7 +14,7 @@ This is a **pnpm + Turborepo monorepo** containing:
 
 ### Packages
 
-- **`packages/db`** - Prisma ORM + PostgreSQL schema (12 models)
+- **`packages/db`** - Prisma ORM + PostgreSQL schema
 - **`packages/jobnimbus-sdk`** - Typed JobNimbus API client
 - **`packages/shared-types`** - Domain types and interfaces
 - **`packages/ui`** - Shared React component library (Tailwind + shadcn/ui)
@@ -122,7 +122,7 @@ PostgreSQL database managed by Prisma ORM.
 postgresql://postgres:postgres@localhost:5432/greenenergy?schema=public
 ```
 
-**Models**: Job, Contact, JobSyncLog, PhotoMetadata, QCPhotoCheck, JobRiskSnapshot, RiskFlag, CustomerUser, Subcontractor, SafetyIncident, Warranty, MaterialOrder, SystemConfig
+**Models**: Job, Contact, JobSyncLog, PhotoMetadata, QCPhotoCheck, JobRiskSnapshot, RiskFlag, CustomerUser, Subcontractor, SafetyIncident, Warranty, MaterialOrder, SystemConfig, LlmCallLog
 
 ## 🔧 Configuration
 
@@ -504,6 +504,7 @@ Phase 2 Sprint 5 introduced an AI-powered operations assistant that generates jo
 - ✅ Job lookup dashboard with collapsible sections and recommendations table
 - ✅ Operators can generate **AI job summaries** and **AI customer message drafts** from the internal dashboard at `/ai-ops`
 - ✅ LLM is optional and guarded by env flags; UI shows `isFallback` when LLM is disabled or unavailable
+- ✅ LLM Usage Monitoring console is available at `/llm-usage` (summary + recent call audit log)
 - ✅ 22 comprehensive test cases covering core scenarios
 
 **API Endpoints**:
@@ -515,11 +516,14 @@ GET   /api/v1/ai-ops/jobs/:jobId/insights             # Get summary + recommenda
 POST  /api/v1/ai-ops/jobs/:jobId/customer-message     # Generate customer message (legacy rule-based)
 POST  /api/v1/ai-ops/jobs/:jobId/summary/llm          # Generate LLM-powered job summary (fallback-safe)
 POST  /api/v1/ai-ops/jobs/:jobId/customer-message/llm # Generate LLM-powered customer message draft (fallback-safe)
+GET   /api/v1/llm-usage/summary?days=7|30|90          # LLM usage summary (internal)
+GET   /api/v1/llm-usage/recent?limit=50               # Recent LLM call audit log (internal)
 ```
 
 **Dashboard Routes**:
 
 - `/ai-ops` - AI Assistant with job lookup, summary display, recommendations table, and LLM-backed AI summary + customer draft panels
+- `/llm-usage` - LLM Usage Monitoring (calls, fallback vs errors, model breakdown, recent call audit log)
 
 **Message Types**: STATUS_UPDATE | ETA_UPDATE | GENERIC
 
@@ -543,7 +547,7 @@ POST  /api/v1/ai-ops/jobs/:jobId/customer-message/llm # Generate LLM-powered cus
 - Tone control for friendly or formal language
 
 **Future Enhancements (v2)**:
-- Real LLM integration (OpenAI, Anthropic, local models)
+- Expand LLM integration (more providers, better prompts, more features)
 - Multi-job portfolio insights
 - Predictive recommendations
 - Proactive alerts for HIGH priority items
