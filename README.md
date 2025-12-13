@@ -2,6 +2,11 @@
 
 A professional TypeScript monorepo for managing solar installation operations with JobNimbus integration, advanced QC, risk management, and operational intelligence.
 
+## 👤 Owner Quick Start (No CLI)
+
+If you are a non-technical owner/operator, start here:
+- **[Owner Setup & Operations Manual](docs/22-owner-setup-and-operations-manual.md)**
+
 ## 🏗️ Project Structure
 
 This is a **pnpm + Turborepo monorepo** containing:
