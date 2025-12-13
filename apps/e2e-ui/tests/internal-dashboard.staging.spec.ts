@@ -89,17 +89,20 @@ test('LLM Usage loads summary+recent (no console errors, no /api/v1 failures)', 
   const consoleErrors = attachConsoleErrorTracker(page);
   const apiFailures = attachApiFailureTracker(page, origin);
 
-  await page.goto('/llm-usage');
-  await expect(page.getByRole('heading', { name: 'LLM Usage Monitoring' })).toBeVisible();
-
-  await page.waitForResponse(
+  // Set up response waiters BEFORE navigation to avoid missing fast responses.
+  const summaryWait = page.waitForResponse(
     (res) => res.url().includes(`${origin}/api/v1/llm-usage/summary`) && res.status() < 400,
     { timeout: 30_000 }
   );
-  await page.waitForResponse(
+  const recentWait = page.waitForResponse(
     (res) => res.url().includes(`${origin}/api/v1/llm-usage/recent`) && res.status() < 400,
     { timeout: 30_000 }
   );
+
+  await page.goto('/llm-usage');
+  await expect(page.getByRole('heading', { name: 'LLM Usage Monitoring' })).toBeVisible();
+
+  await Promise.all([summaryWait, recentWait]);
 
   await page.waitForTimeout(500);
 
