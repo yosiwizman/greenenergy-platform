@@ -46,3 +46,12 @@ jobs:
 
       - name: Run staging UI smoke tests
         run: pnpm test:ui:staging
+
+      - name: Upload Playwright artifacts (traces/screenshots/videos)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-ui-smoke-artifacts
+          path: apps/e2e-ui/test-results
+          if-no-files-found: ignore
+          retention-days: 7
