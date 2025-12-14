@@ -27,12 +27,14 @@ This sprint focuses on making staging deployment **repeatable and validated** th
 **Purpose**: Developer workstation for feature development and testing
 
 **Services**:
+
 - **Database**: PostgreSQL in Docker at `localhost:5432`
 - **Core API**: `localhost:3000` (NestJS)
 - **Internal Dashboard**: `localhost:3002` (Next.js)
 - **Customer Portal**: `localhost:3001` (Next.js)
 
 **Setup**:
+
 ```bash
 # Start database
 docker-compose -f infra/docker/docker-compose.yml up -d
@@ -51,12 +53,14 @@ pnpm --filter @greenenergy/customer-portal dev
 **Purpose**: Pre-production environment for validation and QA
 
 **Services**:
+
 - **Core API**: Railway (Dockerfile deployment)
 - **Database**: Railway PostgreSQL 15
 - **Internal Dashboard**: Vercel (Next.js)
 - **Customer Portal**: Vercel (Next.js)
 
 **Key Characteristics**:
+
 - Uses **test/sandbox credentials** for external integrations (JobNimbus, QuickBooks)
 - Separate Railway + Vercel projects from production
 - Automated smoke tests run via GitHub Actions (daily + on-demand)
@@ -67,6 +71,7 @@ pnpm --filter @greenenergy/customer-portal dev
 **Purpose**: Live customer-facing environment
 
 **Services**: Same architecture as staging, but with:
+
 - Live credentials for JobNimbus and QuickBooks
 - Custom domains
 - Enhanced monitoring and alerting
@@ -77,6 +82,7 @@ pnpm --filter @greenenergy/customer-portal dev
 ## 2. Staging Deployment Path
 
 This section summarizes the deployment steps. For full details, see:
+
 - [Deployment & Environments Guide (docs/11)](./11-deployment-and-environments.md)
 - [Staging Smoke Tests & Go-Live Checklist (docs/16)](./16-staging-smoke-tests-and-go-live-checklist.md)
 
@@ -146,6 +152,7 @@ railway run npx prisma migrate deploy
 #### Step 5: Deploy Customer Portal on Vercel
 
 Same as Internal Dashboard, but:
+
 - **Project Name**: `greenenergy-customer-portal-staging`
 - **Root Directory**: `apps/customer-portal`
 - **Build Command**: `cd ../.. && pnpm install && pnpm build --filter @greenenergy/customer-portal`
@@ -219,16 +226,17 @@ To enable **automated smoke tests** via GitHub Actions, configure these secrets 
 3. Click **New repository secret**
 4. Add the following secrets:
 
-| Secret Name | Value | Example |
-|-------------|-------|---------|
-| `STAGING_CORE_API_BASE_URL` | Railway Core API URL (no `/api/v1`) | `https://staging-api.railway.app` |
-| `STAGING_INTERNAL_DASHBOARD_BASE_URL` | Vercel Internal Dashboard URL | `https://greenenergy-internal-staging.vercel.app` |
-| `STAGING_CUSTOMER_PORTAL_BASE_URL` | Vercel Customer Portal URL | `https://greenenergy-portal-staging.vercel.app` |
-| `STAGING_INTERNAL_API_KEY` | Internal API key (same as Core API) | `abc123...` |
+| Secret Name                           | Value                               | Example                                           |
+| ------------------------------------- | ----------------------------------- | ------------------------------------------------- |
+| `STAGING_CORE_API_BASE_URL`           | Railway Core API URL (no `/api/v1`) | `https://staging-api.railway.app`                 |
+| `STAGING_INTERNAL_DASHBOARD_BASE_URL` | Vercel Internal Dashboard URL       | `https://greenenergy-internal-staging.vercel.app` |
+| `STAGING_CUSTOMER_PORTAL_BASE_URL`    | Vercel Customer Portal URL          | `https://greenenergy-portal-staging.vercel.app`   |
+| `STAGING_INTERNAL_API_KEY`            | Internal API key (same as Core API) | `abc123...`                                       |
 
 ### 4.2 Verifying Secrets
 
 After adding secrets:
+
 1. Go to **Actions** tab in GitHub
 2. Select **Staging Smoke Tests** workflow
 3. Click **Run workflow** → **Run workflow**
@@ -251,6 +259,7 @@ The smoke test script (`tools/smoke-tests`) validates that:
 ### 5.2 Running Smoke Tests Locally
 
 **Setup**:
+
 1. After deploying to staging, create a `.env` file in repo root:
 
 ```bash
@@ -310,23 +319,47 @@ pnpm test:ui:staging
 
 **GitHub Actions Workflow**: `.github/workflows/staging-ui-smoke.yml` (runs daily and on-demand).
 
-No secrets are required by the UI smoke workflow; it validates that key pages render and that there are no console errors or failing `/api/v1/*` requests on the deployed apps.
+The UI smoke workflow does **not** require secrets; it validates that key pages render and that there are no console errors or failing `/api/v1/*` requests on the deployed apps.
 
 **Triggers**:
-- **Manual**: Go to Actions → Staging Smoke Tests → Run workflow
-- **Scheduled**: Daily at 09:00 UTC (configurable)
+
+- **Manual**: Go to Actions → Staging UI Smoke Tests → Run workflow
+- **Scheduled**: Daily at 09:30 UTC (configurable)
 
 **How It Works**:
+
 1. Checks out repository
-2. Installs Node.js 20 and pnpm 9
-3. Installs dependencies with caching
-4. Runs `pnpm smoke:staging`
-5. Uses GitHub Secrets for environment variables
+2. Installs Node.js 20 and pnpm
+3. Installs dependencies (with pnpm store cache)
+4. Installs Playwright browsers
+5. Runs `pnpm test:ui:staging`
+
+#### Anti-flake pattern: register response waiters before navigation
+
+A common source of Playwright flakes is setting up `page.waitForResponse(...)` **after** a navigation/click. If the response is fast, Playwright can miss it and your test will hang until timeout.
+
+Standardize on `apps/e2e-ui/utils/waitForApiResponses.ts` and **create all waiters before** the action that triggers the requests.
+
+```ts
+import { waitForApiResponses } from '../utils/waitForApiResponses';
+
+const apiWait = waitForApiResponses(page, [
+  { urlIncludes: '/api/v1/llm-usage/summary', method: 'GET' },
+  { urlIncludes: '/api/v1/llm-usage/recent', method: 'GET' },
+]);
+
+await page.goto('/llm-usage', { waitUntil: 'domcontentloaded' });
+const [summaryRes, recentRes] = await apiWait;
+
+expect(summaryRes.status()).toBeLessThan(400);
+expect(recentRes.status()).toBeLessThan(400);
+```
 
 **Viewing Results**:
+
 - Go to **Actions** tab in GitHub
 - Click on the workflow run
-- Expand "Run staging smoke tests" step
+- Expand "Run staging UI smoke tests" step
 - Review pass/fail status
 
 ### 5.4 Troubleshooting Failed Smoke Tests
@@ -374,6 +407,7 @@ After deploying `main` to staging:
 ### 6.3 Manual UI Verification
 
 **Internal Dashboard**:
+
 - [ ] `/command-center` - Overview cards load
 - [ ] `/workflows` - Workflow rules display
 - [ ] `/dispatch` - Dispatch recommendations load
@@ -381,10 +415,12 @@ After deploying `main` to staging:
 - [ ] `/ops` - Ops status dashboard shows healthy services
 
 **Customer Portal**:
+
 - [ ] Root page loads
 - [ ] (Optional) Generate magic link and verify full portal flow
 
 **Core API (via Railway Logs)**:
+
 - [ ] No startup errors
 - [ ] Database connection successful
 - [ ] JobNimbus sync runs without errors (if enabled)
@@ -407,10 +443,12 @@ When ready to deploy to production (future sprint):
 ## 7. Continuous Deployment (Future Enhancement)
 
 **Current State** (Phase 9 Sprint 1):
+
 - Staging smoke tests run on-demand and daily
 - Deployments are manual (push to Railway/Vercel)
 
 **Future Enhancements**:
+
 1. **Auto-Deploy to Staging**: Push to `main` → auto-deploy to staging → run smoke tests
 2. **Auto-Promote to Production**: If staging smoke tests pass, auto-promote to production (with approval gate)
 3. **Integration with Slack/Discord**: Notify team on deployment success/failure
@@ -510,4 +548,4 @@ See **[Troubleshooting Section in docs/16](./16-staging-smoke-tests-and-go-live-
 
 **End of Release & Staging Playbook**
 
-*This document is a living guide and should be updated as the platform evolves.*
+_This document is a living guide and should be updated as the platform evolves._

@@ -1,9 +1,18 @@
-import { expect, test } from '@playwright/test';
+import {
+  expect,
+  test,
+  type ConsoleMessage,
+  type Page,
+  type Request,
+  type Response,
+} from '@playwright/test';
 
-function attachConsoleErrorTracker(page: any) {
+import { waitForApiResponses } from '../utils/waitForApiResponses';
+
+function attachConsoleErrorTracker(page: Page) {
   const errors: string[] = [];
 
-  page.on('console', (msg: any) => {
+  page.on('console', (msg: ConsoleMessage) => {
     if (msg.type() !== 'error') return;
     errors.push(`[console.error] ${msg.text()}`);
   });
@@ -15,10 +24,10 @@ function attachConsoleErrorTracker(page: any) {
   return errors;
 }
 
-function attachApiFailureTracker(page: any, origin: string) {
+function attachApiFailureTracker(page: Page, origin: string) {
   const failures: string[] = [];
 
-  page.on('response', (res: any) => {
+  page.on('response', (res: Response) => {
     const url: string = res.url();
     if (!url.startsWith(`${origin}/api/v1/`)) return;
 
@@ -28,7 +37,7 @@ function attachApiFailureTracker(page: any, origin: string) {
     }
   });
 
-  page.on('requestfailed', (req: any) => {
+  page.on('requestfailed', (req: Request) => {
     const url: string = req.url();
     if (!url.startsWith(`${origin}/api/v1/`)) return;
 
@@ -38,21 +47,32 @@ function attachApiFailureTracker(page: any, origin: string) {
   return failures;
 }
 
-test('Command Center loads (no console errors, no /api/v1 failures)', async ({ page }, testInfo) => {
+test('Command Center loads (no console errors, no /api/v1 failures)', async ({
+  page,
+}, testInfo) => {
   const baseURL = String(testInfo.project.use.baseURL);
   const origin = new URL(baseURL).origin;
 
   const consoleErrors = attachConsoleErrorTracker(page);
   const apiFailures = attachApiFailureTracker(page, origin);
 
-  await page.goto('/');
+  // Register response waiters BEFORE navigation to avoid missing fast responses.
+  const overviewWait = waitForApiResponses(
+    page,
+    [
+      {
+        urlIncludes: `${origin}/api/v1/command-center/overview`,
+        method: 'GET',
+      },
+    ],
+    30_000
+  );
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Command Center' })).toBeVisible();
 
-  await page.waitForResponse(
-    (res) =>
-      res.url().startsWith(`${origin}/api/v1/command-center/overview`) && res.status() < 400,
-    { timeout: 30_000 }
-  );
+  const [overviewResponse] = await overviewWait;
+  expect(overviewResponse.status()).toBeLessThan(400);
 
   // Let any late console/network events settle.
   await page.waitForTimeout(500);
@@ -61,20 +81,31 @@ test('Command Center loads (no console errors, no /api/v1 failures)', async ({ p
   expect(apiFailures, apiFailures.join('\n')).toEqual([]);
 });
 
-test('Workflows loads rules (no console errors, no /api/v1 failures)', async ({ page }, testInfo) => {
+test('Workflows loads rules (no console errors, no /api/v1 failures)', async ({
+  page,
+}, testInfo) => {
   const baseURL = String(testInfo.project.use.baseURL);
   const origin = new URL(baseURL).origin;
 
   const consoleErrors = attachConsoleErrorTracker(page);
   const apiFailures = attachApiFailureTracker(page, origin);
 
-  await page.goto('/workflows');
+  const rulesWait = waitForApiResponses(
+    page,
+    [
+      {
+        urlIncludes: `${origin}/api/v1/workflows/rules`,
+        method: 'GET',
+      },
+    ],
+    30_000
+  );
+
+  await page.goto('/workflows', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Workflows' })).toBeVisible();
 
-  await page.waitForResponse(
-    (res) => res.url().startsWith(`${origin}/api/v1/workflows/rules`) && res.status() < 400,
-    { timeout: 30_000 }
-  );
+  const [rulesResponse] = await rulesWait;
+  expect(rulesResponse.status()).toBeLessThan(400);
 
   await page.waitForTimeout(500);
 
@@ -82,27 +113,36 @@ test('Workflows loads rules (no console errors, no /api/v1 failures)', async ({ 
   expect(apiFailures, apiFailures.join('\n')).toEqual([]);
 });
 
-test('LLM Usage loads summary+recent (no console errors, no /api/v1 failures)', async ({ page }, testInfo) => {
+test('LLM Usage loads summary+recent (no console errors, no /api/v1 failures)', async ({
+  page,
+}, testInfo) => {
   const baseURL = String(testInfo.project.use.baseURL);
   const origin = new URL(baseURL).origin;
 
   const consoleErrors = attachConsoleErrorTracker(page);
   const apiFailures = attachApiFailureTracker(page, origin);
 
-  // Set up response waiters BEFORE navigation to avoid missing fast responses.
-  const summaryWait = page.waitForResponse(
-    (res) => res.url().includes(`${origin}/api/v1/llm-usage/summary`) && res.status() < 400,
-    { timeout: 30_000 }
-  );
-  const recentWait = page.waitForResponse(
-    (res) => res.url().includes(`${origin}/api/v1/llm-usage/recent`) && res.status() < 400,
-    { timeout: 30_000 }
+  const llmUsageWait = waitForApiResponses(
+    page,
+    [
+      {
+        urlIncludes: `${origin}/api/v1/llm-usage/summary`,
+        method: 'GET',
+      },
+      {
+        urlIncludes: `${origin}/api/v1/llm-usage/recent`,
+        method: 'GET',
+      },
+    ],
+    30_000
   );
 
-  await page.goto('/llm-usage');
+  await page.goto('/llm-usage', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'LLM Usage Monitoring' })).toBeVisible();
 
-  await Promise.all([summaryWait, recentWait]);
+  const [summaryResponse, recentResponse] = await llmUsageWait;
+  expect(summaryResponse.status()).toBeLessThan(400);
+  expect(recentResponse.status()).toBeLessThan(400);
 
   await page.waitForTimeout(500);
 
@@ -117,11 +157,14 @@ test('Safety is Coming Soon and makes no /api/v1 calls', async ({ page }, testIn
   const consoleErrors = attachConsoleErrorTracker(page);
   const apiFailures = attachApiFailureTracker(page, origin);
 
-  await page.goto('/safety');
+  await page.goto('/safety', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Safety & Incidents' })).toBeVisible();
   await expect(page.getByText('Coming soon')).toBeVisible();
 
+  // Give any late events a chance to surface.
+  await page.waitForTimeout(500);
+
   // Coming soon pages should not call /api/v1 at all.
-  expect(apiFailures, apiFailures.join('\n')).toEqual([]);
-  expect(consoleErrors, consoleErrors.join('\n')).toEqual([]);
+  expect(apiFailures, apiFailures.join('\\n')).toEqual([]);
+  expect(consoleErrors, consoleErrors.join('\\n')).toEqual([]);
 });

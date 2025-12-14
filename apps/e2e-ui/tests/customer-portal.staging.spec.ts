@@ -1,9 +1,16 @@
-import { expect, test } from '@playwright/test';
+import {
+  expect,
+  test,
+  type ConsoleMessage,
+  type Page,
+  type Request,
+  type Response,
+} from '@playwright/test';
 
-function attachConsoleErrorTracker(page: any) {
+function attachConsoleErrorTracker(page: Page) {
   const errors: string[] = [];
 
-  page.on('console', (msg: any) => {
+  page.on('console', (msg: ConsoleMessage) => {
     if (msg.type() !== 'error') return;
     errors.push(`[console.error] ${msg.text()}`);
   });
@@ -15,10 +22,10 @@ function attachConsoleErrorTracker(page: any) {
   return errors;
 }
 
-function attachSameOriginBadResponseTracker(page: any, origin: string) {
+function attachSameOriginBadResponseTracker(page: Page, origin: string) {
   const failures: string[] = [];
 
-  page.on('response', (res: any) => {
+  page.on('response', (res: Response) => {
     const url: string = res.url();
     if (!url.startsWith(origin)) return;
 
@@ -28,7 +35,7 @@ function attachSameOriginBadResponseTracker(page: any, origin: string) {
     }
   });
 
-  page.on('requestfailed', (req: any) => {
+  page.on('requestfailed', (req: Request) => {
     const url: string = req.url();
     if (!url.startsWith(origin)) return;
 
@@ -38,14 +45,16 @@ function attachSameOriginBadResponseTracker(page: any, origin: string) {
   return failures;
 }
 
-test('Customer portal home loads (no console errors, no same-origin 404/5xx)', async ({ page }, testInfo) => {
+test('Customer portal home loads (no console errors, no same-origin 404/5xx)', async ({
+  page,
+}, testInfo) => {
   const baseURL = String(testInfo.project.use.baseURL);
   const origin = new URL(baseURL).origin;
 
   const consoleErrors = attachConsoleErrorTracker(page);
   const badResponses = attachSameOriginBadResponseTracker(page, origin);
 
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Welcome to Your Project Portal' })).toBeVisible();
 
   // Let favicon + any late requests settle.

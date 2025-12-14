@@ -51,3 +51,7 @@ prisma/migrations/
 *.tmp
 .cache/
 .vercel
+
+# Playwright
+test-results/
+playwright-report/
